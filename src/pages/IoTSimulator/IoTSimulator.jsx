@@ -196,7 +196,7 @@ const IoTDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["productQuantity"],
-          "tier 2": ["productQuantity", "customerType"]
+          "tier 2": ["productQuantity"]
         }
       },
       "Use of Sold Products": {
