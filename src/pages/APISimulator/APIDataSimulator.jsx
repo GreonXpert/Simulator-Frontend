@@ -12,29 +12,31 @@ const APIDataSimulator = () => {
   const [success, setSuccess] = useState(0);
   const [lastHttp, setLastHttp] = useState("—");
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
-  
+
   // Configuration state
   const [selectedScope, setSelectedScope] = useState("Scope 1");
   const [selectedCategory, setSelectedCategory] = useState("");
   const [selectedActivity, setSelectedActivity] = useState("");
   const [selectedTier, setSelectedTier] = useState("tier 1");
-  
+
   // Batch processing
   const [batchMode, setBatchMode] = useState(false);
   const [batchSize, setBatchSize] = useState(5);
-  
+
   // Refs
   const logRef = useRef(null);
   const timerRef = useRef(null);
-  
+
   // Updated configuration data matching IoT simulator exactly
   const scopeConfig = {
     "Scope 1": {
       "Combustion": {
         activities: [],
-        tiers: ["tier 1"],
+        tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["fuelConsumption"]
+          "tier 1": ["fuelConsumption"],
+          "tier 2": ["fuelConsumption"]
+
         }
       },
       "Fugitive": {
@@ -43,15 +45,15 @@ const APIDataSimulator = () => {
         fields: {
           SF6: {
             "tier 1": ["nameplateCapacity", "defaultLeakageRate"],
-            "tier 2": ["nameplateCapacity", "defaultLeakageRate", "decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"]
+            "tier 2": ["decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"]
           },
           "CH4-Leaks": {
-            "tier 1": ["activityData", "numberOfComponents"],
-            "tier 2": ["activityData", "numberOfComponents"]
+            "tier 1": ["activityData"],
+            "tier 2": ["numberOfComponents"]
           },
           Refrigeration: {
             "tier 1": ["numberOfUnits", "leakageRate"],
-            "tier 2": ["numberOfUnits", "leakageRate", "installedCapacity", "endYearCapacity", "purchases", "disposals"]
+            "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
           },
           Generic: {
             "tier 1": ["numberOfUnits", "leakageRate"],
@@ -64,7 +66,7 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["productionOutput"],
-          "tier 2": ["productionOutput", "rawMaterialInput"]
+          "tier 2": ["rawMaterialInput"]
         }
       }
     },
@@ -198,7 +200,7 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["productQuantity"],
-          "tier 2": ["productQuantity", "customerType"]
+          "tier 2": ["productQuantity"]
         }
       },
       "Use of Sold Products": {
@@ -209,12 +211,22 @@ const APIDataSimulator = () => {
           "tier 2": ["productQuantity", "usePattern", "energyEfficiency"]
         }
       },
-      "End-of-Life Treatment of Sold Products": {
-        activities: [],
+     "End-of-Life Treatment of Sold Products": {
+        activities: ["Disposal", "Landfill", "Incineration"],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["massEol"],
-          "tier 2": ["massEol", "toDisposal", "toLandfill", "toIncineration"]
+          "Disposal": {
+            "tier 1": ["massEol", "toDisposal"],
+            "tier 2": ["massEol", "toDisposal"]
+          },
+          "Landfill": {
+            "tier 1": ["massEol", "toLandfill"],
+            "tier 2": ["massEol", "toLandfill"]
+          },
+          "Incineration": {
+            "tier 1": ["massEol", "toIncineration"],
+            "tier 2": ["massEol", "toIncineration"]
+          }
         }
       },
       "Franchises": {
@@ -280,23 +292,31 @@ const APIDataSimulator = () => {
     if (/pattern/i.test(fieldName)) return rand(0.5, 2.0, 2);
     if (/type/i.test(fieldName)) return ["Landfill", "Incineration", "Recycling", "Composting"][Math.floor(Math.random() * 4)];
     if (/tdLoss|loss/i.test(fieldName)) return rand(0.01, 0.15, 4);
-    
+
+
+
+      // End-of-Life specific fields
+    if (/massEol/i.test(fieldName)) return rand(100, 50000, 2); // Mass of end-of-life products in kg
+    if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to disposal
+    if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to landfill
+    if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to incineration
+
     // Default range for unspecified fields
     return rand(1, 1000, 2);
   };
 
   const getCurrentFields = () => {
     if (!selectedScope || !selectedCategory) return [];
-    
+
     const categoryConfig = scopeConfig[selectedScope][selectedCategory];
     if (!categoryConfig) return [];
-    
+
     // For categories with activities
     if (categoryConfig.activities && categoryConfig.activities.length > 0) {
       if (!selectedActivity) return [];
       return categoryConfig.fields[selectedActivity]?.[selectedTier] || [];
     }
-    
+
     // For categories without activities
     return categoryConfig.fields[selectedTier] || [];
   };
@@ -304,11 +324,11 @@ const APIDataSimulator = () => {
   const makeDataValues = () => {
     const fields = getCurrentFields();
     const data = {};
-    
+
     fields.forEach(field => {
       data[field] = getFieldValue(field);
     });
-    
+
     return data;
   };
 
@@ -326,13 +346,13 @@ const APIDataSimulator = () => {
   const buildBatchPayload = () => {
     const now = new Date();
     const batch = [];
-    
+
     for (let i = 0; i < batchSize; i++) {
       // Generate timestamps over the last hour
       const timestamp = new Date(now.getTime() - (i * 10 * 60 * 1000)); // 10-minute intervals
       batch.push(buildPayload(timestamp));
     }
-    
+
     return { batchData: batch };
   };
 
@@ -341,24 +361,24 @@ const APIDataSimulator = () => {
     if (!logRef.current) return;
     const t = new Date().toLocaleTimeString();
     const line = document.createElement("div");
-    
-    switch(type) {
-      case "ok": 
-        line.style.color = "#22c55e"; 
+
+    switch (type) {
+      case "ok":
+        line.style.color = "#22c55e";
         break;
-      case "warn": 
-        line.style.color = "#f59e0b"; 
+      case "warn":
+        line.style.color = "#f59e0b";
         break;
-      case "err": 
-        line.style.color = "#ef4444"; 
+      case "err":
+        line.style.color = "#ef4444";
         break;
-      default: 
+      default:
         line.style.color = "#60a5fa";
     }
-    
+
     line.textContent = `[${t}] ${msg}`;
     logRef.current.prepend(line);
-    
+
     while (logRef.current.childNodes.length > 500) {
       logRef.current.removeChild(logRef.current.lastChild);
     }
@@ -380,12 +400,12 @@ const APIDataSimulator = () => {
 
     const categoryConfig = scopeConfig[selectedScope][selectedCategory];
     const requiresActivity = categoryConfig?.activities && categoryConfig.activities.length > 0;
-    
+
     if (requiresActivity && !selectedActivity) {
       log(`Please select activity for ${selectedCategory} category`, "err");
       return;
     }
-    
+
     const payload = batchMode ? buildBatchPayload() : buildPayload();
     const fields = getCurrentFields();
 
@@ -404,7 +424,7 @@ const APIDataSimulator = () => {
         },
         body: JSON.stringify(payload)
       });
-      
+
       setLastHttp(res.status);
       const text = await res.text();
       setTotalSent(prev => prev + (batchMode ? batchSize : 1));
@@ -428,7 +448,7 @@ const APIDataSimulator = () => {
 
   const startAuto = () => {
     if (timerRef.current) return;
-    
+
     if (!selectedScope || !selectedCategory) {
       log("Please select scope and category before starting auto mode", "err");
       return;
@@ -436,12 +456,12 @@ const APIDataSimulator = () => {
 
     const categoryConfig = scopeConfig[selectedScope][selectedCategory];
     const requiresActivity = categoryConfig?.activities && categoryConfig.activities.length > 0;
-    
+
     if (requiresActivity && !selectedActivity) {
       log(`Please select activity for ${selectedCategory} category`, "err");
       return;
     }
-    
+
     const ms = Math.max(300, parseInt(intervalMs || 15000, 10));
     setStatus("RUNNING");
     log(`API Auto mode started @ every ${ms} ms ${batchMode ? `(batch: ${batchSize})` : '(single)'}`, "ok");
@@ -510,7 +530,7 @@ const APIDataSimulator = () => {
 
   // Styles matching IoT simulator but with API-specific colors
   const styles = {
-    wrap: { 
+    wrap: {
       width: "100vw",
       height: "100vh",
       margin: 0,
@@ -526,9 +546,9 @@ const APIDataSimulator = () => {
       gap: isMobile ? 12 : 20
     },
     header: {
-      background: "#1f2937", 
-      borderRadius: isMobile ? 8 : 16, 
-      padding: isMobile ? 16 : 24, 
+      background: "#1f2937",
+      borderRadius: isMobile ? 8 : 16,
+      padding: isMobile ? 16 : 24,
       boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)"
     },
     main: {
@@ -539,9 +559,9 @@ const APIDataSimulator = () => {
       minHeight: 0
     },
     leftPanel: {
-      background: "#1f2937", 
-      borderRadius: isMobile ? 8 : 16, 
-      padding: isMobile ? 16 : 24, 
+      background: "#1f2937",
+      borderRadius: isMobile ? 8 : 16,
+      padding: isMobile ? 16 : 24,
       boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
       display: "flex",
       flexDirection: "column"
@@ -552,22 +572,22 @@ const APIDataSimulator = () => {
       gap: isMobile ? 12 : 20
     },
     statsCard: {
-      background: "#1f2937", 
-      borderRadius: isMobile ? 8 : 16, 
-      padding: isMobile ? 12 : 20, 
+      background: "#1f2937",
+      borderRadius: isMobile ? 8 : 16,
+      padding: isMobile ? 12 : 20,
       boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)"
     },
     logCard: {
-      background: "#1f2937", 
-      borderRadius: isMobile ? 8 : 16, 
-      padding: isMobile ? 12 : 20, 
+      background: "#1f2937",
+      borderRadius: isMobile ? 8 : 16,
+      padding: isMobile ? 12 : 20,
       boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.3)",
       display: "flex",
       flexDirection: "column",
       minHeight: 0
     },
-    heading: { 
-      margin: "0 0 8px", 
+    heading: {
+      margin: "0 0 8px",
       fontSize: isMobile ? 24 : 32,
       fontWeight: 800,
       background: "linear-gradient(135deg, #7c3aed 0%, #06b6d4 100%)",
@@ -575,37 +595,37 @@ const APIDataSimulator = () => {
       WebkitTextFillColor: "transparent",
       backgroundClip: "text"
     },
-    sub: { 
-      margin: "0 0 20px", 
-      color: "#94a3b8", 
-      fontSize: isMobile ? 14 : 16 
+    sub: {
+      margin: "0 0 20px",
+      color: "#94a3b8",
+      fontSize: isMobile ? 14 : 16
     },
-    label: { 
-      fontSize: isMobile ? 12 : 14, 
-      color: "#94a3b8", 
-      display: "block", 
+    label: {
+      fontSize: isMobile ? 12 : 14,
+      color: "#94a3b8",
+      display: "block",
       marginBottom: 8,
       fontWeight: 600
     },
-    input: { 
-      width: "100%", 
-      padding: isMobile ? "10px 12px" : "14px 16px", 
-      borderRadius: isMobile ? 8 : 12, 
-      border: "2px solid #374151", 
-      background: "#111827", 
-      color: "#e5e7eb", 
+    input: {
+      width: "100%",
+      padding: isMobile ? "10px 12px" : "14px 16px",
+      borderRadius: isMobile ? 8 : 12,
+      border: "2px solid #374151",
+      background: "#111827",
+      color: "#e5e7eb",
       outline: "none",
       fontSize: isMobile ? 12 : 14,
       transition: "border-color 0.2s",
       boxSizing: "border-box"
     },
     select: {
-      width: "100%", 
-      padding: isMobile ? "10px 12px" : "14px 16px", 
-      borderRadius: isMobile ? 8 : 12, 
-      border: "2px solid #374151", 
-      background: "#111827", 
-      color: "#e5e7eb", 
+      width: "100%",
+      padding: isMobile ? "10px 12px" : "14px 16px",
+      borderRadius: isMobile ? 8 : 12,
+      border: "2px solid #374151",
+      background: "#111827",
+      color: "#e5e7eb",
       outline: "none",
       fontSize: isMobile ? 12 : 14,
       transition: "border-color 0.2s",
@@ -616,9 +636,9 @@ const APIDataSimulator = () => {
       marginRight: 8,
       transform: "scale(1.2)"
     },
-    grid: { 
-      display: "grid", 
-      gap: isMobile ? 12 : 20, 
+    grid: {
+      display: "grid",
+      gap: isMobile ? 12 : 20,
       gridTemplateColumns: "1fr",
       flex: 1
     },
@@ -661,10 +681,10 @@ const APIDataSimulator = () => {
       color: "#94a3b8",
       fontFamily: "ui-monospace, monospace"
     },
-    row: { 
-      display: "grid", 
-      gap: isMobile ? 12 : 16, 
-      gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr" 
+    row: {
+      display: "grid",
+      gap: isMobile ? 12 : 16,
+      gridTemplateColumns: isMobile ? "1fr" : "2fr 1fr 1fr"
     },
     batchRow: {
       display: "flex",
@@ -672,55 +692,55 @@ const APIDataSimulator = () => {
       gap: 12,
       marginTop: 12
     },
-    btns: { 
-      display: "flex", 
-      gap: isMobile ? 8 : 12, 
-      flexWrap: "wrap", 
+    btns: {
+      display: "flex",
+      gap: isMobile ? 8 : 12,
+      flexWrap: "wrap",
       marginTop: isMobile ? 16 : 24,
       justifyContent: isMobile ? "center" : "flex-start"
     },
-    button: { 
-      cursor: "pointer", 
-      border: "none", 
-      borderRadius: isMobile ? 8 : 12, 
-      padding: isMobile ? "10px 16px" : "12px 20px", 
+    button: {
+      cursor: "pointer",
+      border: "none",
+      borderRadius: isMobile ? 8 : 12,
+      padding: isMobile ? "10px 16px" : "12px 20px",
       fontWeight: 700,
       fontSize: isMobile ? 12 : 14,
       transition: "all 0.2s",
       minWidth: isMobile ? "auto" : "120px"
     },
-    primary: { 
-      background: "#7c3aed", 
-      color: "white" 
+    primary: {
+      background: "#7c3aed",
+      color: "white"
     },
-    ghost: { 
-      background: "#111827", 
-      color: "#cbd5e1", 
-      border: "2px solid #374151" 
+    ghost: {
+      background: "#111827",
+      color: "#cbd5e1",
+      border: "2px solid #374151"
     },
-    danger: { 
-      background: "#dc2626", 
-      color: "white" 
+    danger: {
+      background: "#dc2626",
+      color: "white"
     },
-    ok: { 
-      background: "#059669", 
-      color: "white" 
+    ok: {
+      background: "#059669",
+      color: "white"
     },
     disabled: {
       opacity: 0.5,
       cursor: "not-allowed"
     },
-    stats: { 
-      display: "grid", 
-      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
+    stats: {
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
       gap: isMobile ? 8 : 12
     },
-    stat: { 
-      background: "#111827", 
-      border: "2px solid #374151", 
-      borderRadius: isMobile ? 8 : 12, 
-      padding: isMobile ? 12 : 16, 
-      textAlign: "center" 
+    stat: {
+      background: "#111827",
+      border: "2px solid #374151",
+      borderRadius: isMobile ? 8 : 12,
+      padding: isMobile ? 12 : 16,
+      textAlign: "center"
     },
     statTitle: {
       fontSize: isMobile ? 10 : 12,
@@ -730,19 +750,19 @@ const APIDataSimulator = () => {
       textTransform: "uppercase",
       letterSpacing: "0.05em"
     },
-    statValue: { 
-      fontSize: isMobile ? 18 : 24, 
+    statValue: {
+      fontSize: isMobile ? 18 : 24,
       fontWeight: 800,
       color: "#e5e7eb"
     },
-    log: { 
-      background: "#111827", 
-      border: "2px solid #374151", 
-      borderRadius: isMobile ? 8 : 12, 
-      padding: isMobile ? 12 : 16, 
+    log: {
+      background: "#111827",
+      border: "2px solid #374151",
+      borderRadius: isMobile ? 8 : 12,
+      padding: isMobile ? 12 : 16,
       flex: 1,
-      overflow: "auto", 
-      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", 
+      overflow: "auto",
+      fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace",
       fontSize: isMobile ? 11 : 13,
       lineHeight: 1.4,
       minHeight: 0
@@ -855,7 +875,7 @@ const APIDataSimulator = () => {
                   placeholder="http://localhost:5000/api/data-collection/clients/:clientId/nodes/:nodeId/scopes/:scopeId/api-data"
                 />
               </div>
-              
+
               <div style={styles.row}>
                 <div>
                   <label style={styles.label}>Auth Token (optional)</label>
@@ -867,7 +887,7 @@ const APIDataSimulator = () => {
                     placeholder="Bearer JWT token for API authentication"
                   />
                 </div>
-                
+
                 <div>
                   <label style={styles.label}>Interval (ms)</label>
                   <input
@@ -887,8 +907,8 @@ const APIDataSimulator = () => {
                   📦 Batch Processing
                 </div>
                 <div style={styles.batchRow}>
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     style={styles.checkbox}
                     checked={batchMode}
                     onChange={(e) => setBatchMode(e.target.checked)}
@@ -909,43 +929,43 @@ const APIDataSimulator = () => {
                   </div>
                 )}
               </div>
-              
+
               <div style={styles.btns}>
-                <button 
+                <button
                   style={{
-                    ...styles.button, 
+                    ...styles.button,
                     ...styles.primary,
                     ...(currentFields.length === 0 ? styles.disabled : {})
-                  }} 
+                  }}
                   onClick={sendOnce}
                   disabled={currentFields.length === 0}
                 >
                   📤 Send {batchMode ? 'Batch' : 'Once'}
                 </button>
-                <button 
+                <button
                   style={{
-                    ...styles.button, 
+                    ...styles.button,
                     ...styles.ok,
                     ...(status === "RUNNING" || currentFields.length === 0 ? styles.disabled : {})
-                  }} 
-                  onClick={startAuto} 
+                  }}
+                  onClick={startAuto}
                   disabled={status === "RUNNING" || currentFields.length === 0}
                 >
                   ▶️ Start Auto
                 </button>
-                <button 
+                <button
                   style={{
-                    ...styles.button, 
+                    ...styles.button,
                     ...styles.danger,
                     ...(status !== "RUNNING" ? styles.disabled : {})
-                  }} 
-                  onClick={stopAuto} 
+                  }}
+                  onClick={stopAuto}
                   disabled={status !== "RUNNING"}
                 >
                   ⏹ Stop
                 </button>
-                <button 
-                  style={{...styles.button, ...styles.ghost}} 
+                <button
+                  style={{ ...styles.button, ...styles.ghost }}
                   onClick={clearLog}
                 >
                   🧹 Clear Log
@@ -963,7 +983,7 @@ const APIDataSimulator = () => {
                 </div>
                 <div style={styles.stat}>
                   <div style={styles.statTitle}>Status</div>
-                  <div style={{...styles.statValue, color: status === "RUNNING" ? "#059669" : "#94a3b8"}}>{status}</div>
+                  <div style={{ ...styles.statValue, color: status === "RUNNING" ? "#059669" : "#94a3b8" }}>{status}</div>
                 </div>
                 <div style={styles.stat}>
                   <div style={styles.statTitle}>Last HTTP</div>
@@ -971,7 +991,7 @@ const APIDataSimulator = () => {
                 </div>
                 <div style={styles.stat}>
                   <div style={styles.statTitle}>Success</div>
-                  <div style={{...styles.statValue, color: "#059669"}}>{success}</div>
+                  <div style={{ ...styles.statValue, color: "#059669" }}>{success}</div>
                 </div>
               </div>
             </div>
