@@ -26,7 +26,7 @@ const IoTDataSimulator = () => {
   // Updated configuration data with End-of-Life activities
   const scopeConfig = {
     "Scope 1": {
-       "Combustion": {
+      "Combustion": {
         activities: [],
         tiers: ["tier 1", "tier 2"],
         fields: {
@@ -41,7 +41,7 @@ const IoTDataSimulator = () => {
         fields: {
           SF6: {
             "tier 1": ["nameplateCapacity", "defaultLeakageRate"],
-            "tier 2": ["nameplateCapacity", "defaultLeakageRate", "decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"]
+            "tier 2": ["decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"]
           },
           "CH4-Leaks": {
             "tier 1": ["activityData", "numberOfComponents"],
@@ -126,8 +126,8 @@ const IoTDataSimulator = () => {
             "tier 2": ["fuelConsumed"]
           },
           "WTT": {
-            "tier 1": ["fuelConsumption"],
-            "tier 2": ["fuelConsumption"]
+            "tier 1": ["consumed_fuel"],   // or send BOTH keys
+            "tier 2": ["consumed_fuel"]
           },
           "T&D losses": {
             "tier 1": ["electricityConsumption", "tdLossFactor"],
