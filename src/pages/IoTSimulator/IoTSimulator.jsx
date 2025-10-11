@@ -49,7 +49,7 @@ const IoTDataSimulator = () => {
           },
           Refrigeration: {
             "tier 1": ["numberOfUnits", "leakageRate"],
-            "tier 2": ["numberOfUnits", "leakageRate", "installedCapacity", "endYearCapacity", "purchases", "disposals"]
+            "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
           },
           Generic: {
             "tier 1": ["numberOfUnits", "leakageRate"],
