@@ -62,7 +62,7 @@ const IoTDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["productionOutput"],
-          "tier 2": ["productionOutput", "rawMaterialInput"]
+          "tier 2": ["rawMaterialInput"]
         }
       }
     },
