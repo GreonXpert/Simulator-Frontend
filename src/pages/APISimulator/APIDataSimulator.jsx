@@ -44,7 +44,7 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           SF6: {
-            "tier 1": ["nameplateCapacity", "defaultLeakageRate"],
+            "tier 1": ["nameplateCapacity"],
             "tier 2": ["decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"]
           },
           "CH4-Leaks": {
@@ -52,13 +52,10 @@ const APIDataSimulator = () => {
             "tier 2": ["numberOfComponents"]
           },
           Refrigeration: {
-            "tier 1": ["numberOfUnits", "leakageRate"],
+            "tier 1": ["numberOfUnits"],
             "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
           },
-          Generic: {
-            "tier 1": ["numberOfUnits", "leakageRate"],
-            "tier 2": ["numberOfUnits", "leakageRate", "installedCapacity", "endYearCapacity", "purchases", "disposals"]
-          }
+         
         }
       },
       "Process Emission": {
@@ -134,8 +131,8 @@ const APIDataSimulator = () => {
             "tier 2": ["consumed_fuel"]
           },
           "T&D losses": {
-            "tier 1": ["electricityConsumption", "tdLossFactor"],
-            "tier 2": ["electricityConsumption", "tdLossFactor"]
+            "tier 1": ["electricityConsumption"],
+            "tier 2": ["electricityConsumption"]
           }
         }
       },
@@ -144,7 +141,7 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["transportationSpend"],
-          "tier 2": ["mass", "distance"]
+          "tier 2": ["allocation", "distance"]
         }
       },
       "Waste Generated in Operation": {
@@ -192,7 +189,7 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "tier 1": ["transportSpend"],
-          "tier 2": ["mass", "distance"]
+          "tier 2": ["allocation", "distance"]
         }
       },
       "Processing of Sold Products": {
@@ -207,8 +204,8 @@ const APIDataSimulator = () => {
         activities: [],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["productQuantity", "averageLifetimeEnergyConsumption"],
-          "tier 2": ["productQuantity", "usePattern", "energyEfficiency"]
+          "tier 1": ["productQuantity"],
+          "tier 2": ["productQuantity"]
         }
       },
      "End-of-Life Treatment of Sold Products": {
@@ -216,16 +213,16 @@ const APIDataSimulator = () => {
         tiers: ["tier 1", "tier 2"],
         fields: {
           "Disposal": {
-            "tier 1": ["massEol", "toDisposal"],
-            "tier 2": ["massEol", "toDisposal"]
+            "tier 1": ["massEol"],
+            "tier 2": ["massEol"]
           },
           "Landfill": {
-            "tier 1": ["massEol", "toLandfill"],
-            "tier 2": ["massEol", "toLandfill"]
+            "tier 1": ["massEol"],
+            "tier 2": ["massEol"]
           },
           "Incineration": {
-            "tier 1": ["massEol", "toIncineration"],
-            "tier 2": ["massEol", "toIncineration"]
+            "tier 1": ["massEol"],
+            "tier 2": ["massEol"]
           }
         }
       },
@@ -241,8 +238,8 @@ const APIDataSimulator = () => {
         activities: [],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["equitySharePercentage", "investeeRevenue"],
-          "tier 2": ["equitySharePercentage", "investeeScope1Emission", "investeeScope2Emission", "energyConsumption"]
+          "tier 1": ["investeeRevenue"],
+          "tier 2": ["investeeScope1Emission", "investeeScope2Emission", "energyConsumption"]
         }
       }
     }
