@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom';
 import IoTDataSimulator from '../IoTSimulator/IoTSimulator'
 import APIDataSimulator from '../APISimulator/APIDataSimulator'
 
 const TabStructureSimulator = () => {
     const [activeTab, setActiveTab] = useState('iot')
     const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+    const navigate = useNavigate();
 
     // Update window width on resize
     useEffect(() => {
@@ -14,16 +16,16 @@ const TabStructureSimulator = () => {
     }, [])
 
     const tabs = [
-        { 
-            id: 'iot', 
-            label: 'IoT Data Simulator', 
+        {
+            id: 'iot',
+            label: 'IoT Data Simulator',
             icon: '📡',
             component: <IoTDataSimulator />,
             gradient: 'from-blue-500 to-green-400'
         },
-        { 
-            id: 'api', 
-            label: 'API Data Simulator', 
+        {
+            id: 'api',
+            label: 'API Data Simulator',
             icon: '🔗',
             component: <APIDataSimulator />,
             gradient: 'from-purple-500 to-cyan-400'
@@ -44,6 +46,22 @@ const TabStructureSimulator = () => {
             background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #1a1f2e 100%)",
             overflow: "auto"
         },
+        backBtn: {
+            position: 'absolute',
+            top: 20,
+            left: 20,
+            padding: '8px 16px',
+            borderRadius: 12,
+            border: '1px solid rgba(255,255,255,0.15)',
+            background: 'rgba(255,255,255,0.08)',
+            color: '#fff',
+            fontWeight: 600,
+            fontSize: 14,
+            cursor: 'pointer',
+            backdropFilter: 'blur(8px)',
+            transition: 'all 0.25s ease',
+        },
+        backBtnHover: { background: 'rgba(255,255,255,0.15)' },
         tabWrapper: {
             width: "100%",
             display: "flex",
@@ -144,6 +162,14 @@ const TabStructureSimulator = () => {
 
     return (
         <div style={styles.container}>
+            <button
+                style={styles.backBtn}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.15)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                onClick={() => navigate('/simulator')}
+            >
+                ← Back
+            </button>
             <div style={styles.tabWrapper}>
                 {/* Tab Navigation */}
                 <div style={styles.tabContainer}>
@@ -172,15 +198,15 @@ const TabStructureSimulator = () => {
                                     }
                                 }}
                             >
-                                <div 
+                                <div
                                     style={{
                                         ...styles.gradientOverlay,
                                         ...(isActive ? styles.gradientOverlayActive : {})
                                     }}
                                 />
-                                
+
                                 <span style={styles.tabIcon}>{tab.icon}</span>
-                                <span 
+                                <span
                                     style={{
                                         ...styles.tabLabel,
                                         ...(isActive ? styles.tabLabelActive : {})
@@ -200,7 +226,7 @@ const TabStructureSimulator = () => {
                     {currentTab?.component}
                 </div>
             </div>
-            
+
             <style jsx>{`
                 @keyframes fadeInUp {
                     from {
