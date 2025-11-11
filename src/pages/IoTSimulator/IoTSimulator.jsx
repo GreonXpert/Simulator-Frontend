@@ -51,7 +51,7 @@ const IoTDataSimulator = () => {
             "tier 1": ["numberOfUnits"],
             "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
           },
-         
+
         }
       },
       "Process Emission": {
@@ -148,14 +148,22 @@ const IoTDataSimulator = () => {
           "tier 2": ["wasteMass"]
         }
       },
+
       "Business Travel": {
-        activities: [],
+        activities: ["travelbased", "hotelbased"], // ✅ Add these
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["travelSpend", "hotelNights"],
-          "tier 2": ["numberOfPassengers", "distanceTravelled", "hotelNights"]
+          travelbased: {
+            "tier 1": ["travelSpend"],
+            "tier 2": ["numberOfPassengers", "distanceTravelled"]
+          },
+          hotelbased: {
+            "tier 1": ["hotelNights"],
+            "tier 2": ["hotelNights"]
+          }
         }
       },
+
       "Employee Commuting": {
         activities: [],
         tiers: ["tier 1", "tier 2"],
@@ -164,14 +172,22 @@ const IoTDataSimulator = () => {
           "tier 2": ["employeeCount", "averageCommuteDistance", "workingDays"]
         }
       },
+
       "Upstream Leased Assets": {
-        activities: [],
+        activities: ["energybased", "areabased"],   // ✅ Add both activities
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["leasedArea"],
-          "tier 2": ["totalArea", "energyConsumption", "BuildingTotalS1_S2"]
+          energybased: {
+            "tier 1": ["leasedArea"],  // Tier 1 always uses area × EF
+            "tier 2": ["energyConsumption"] // Tier 2 Case A → energy × EF
+          },
+          areabased: {
+            "tier 1": ["leasedArea"],  // same as Tier 1
+            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"] // Tier 2 Case B → area-ratio × BuildingTotal
+          }
         }
       },
+
       "Downstream Leased Assets": {
         activities: [],
         tiers: ["tier 1", "tier 2"],
@@ -223,21 +239,38 @@ const IoTDataSimulator = () => {
         }
       },
       "Franchises": {
-        activities: [],
+        activities: ["emissionbased", "energybased"],  // ✅ Added activities
         tiers: ["tier 1", "tier 2"],
         fields: {
+          // Tier 1 → same for all (count × avgEmission)
           "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
-          "tier 2": ["franchiseTotalS1Emission", "franchiseTotalS2Emission", "energyConsumption"]
+
+          // Tier 2 → activity-specific fields
+          emissionbased: {
+            "tier 2": ["franchiseTotalS1Emission", "franchiseTotalS2Emission"]
+          },
+          energybased: {
+            "tier 2": ["energyConsumption"]
+          }
         }
       },
       "Investments": {
-        activities: [],
+        activities: ["emissionbased", "energybased"],   // ✅ Added activity types
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": [ "investeeRevenue"],
-          "tier 2": [ "investeeScope1Emission", "investeeScope2Emission", "energyConsumption"]
+          // Tier 1 → Revenue based (single value)
+          "tier 1": ["investeeRevenue"],
+
+          // Tier 2 → activity-specific sets
+          emissionbased: {
+            "tier 2": ["investeeScope1Emission", "investeeScope2Emission"]
+          },
+          energybased: {
+            "tier 2": ["energyConsumption"]
+          }
         }
-      }
+      },
+
     }
   };
 
