@@ -19,11 +19,18 @@ const IoTDataSimulator = () => {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [selectedTier, setSelectedTier] = useState("tier 1");
 
+  // ✅ NEW: Scope 1+2 API Integration
+  const [clientId, setClientId] = useState("");
+  const [scope12Data, setScope12Data] = useState(null);
+  const [scope12Loading, setScope12Loading] = useState(false);
+  const [scope12Error, setScope12Error] = useState(null);
+  const [scope12LastFetch, setScope12LastFetch] = useState(null);
+
   // Refs
   const logRef = useRef(null);
   const timerRef = useRef(null);
 
-  // Updated configuration data with End-of-Life activities
+  // ✅ FULLY CORRECTED configuration data
   const scopeConfig = {
     "Scope 1": {
       "Combustion": {
@@ -32,7 +39,6 @@ const IoTDataSimulator = () => {
         fields: {
           "tier 1": ["fuelConsumption"],
           "tier 2": ["fuelConsumption"]
-
         }
       },
       "Fugitive": {
@@ -51,7 +57,10 @@ const IoTDataSimulator = () => {
             "tier 1": ["numberOfUnits"],
             "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
           },
-
+          Generic: {
+            "tier 1": ["numberOfUnits"],
+            "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"]
+          }
         }
       },
       "Process Emission": {
@@ -123,7 +132,7 @@ const IoTDataSimulator = () => {
             "tier 2": ["fuelConsumed"]
           },
           "WTT": {
-            "tier 1": ["consumed_fuel"],   // or send BOTH keys
+            "tier 1": ["consumed_fuel"],
             "tier 2": ["consumed_fuel"]
           },
           "T&D losses": {
@@ -148,9 +157,9 @@ const IoTDataSimulator = () => {
           "tier 2": ["wasteMass"]
         }
       },
-
+      // ✅ CORRECTED: Business Travel
       "Business Travel": {
-        activities: ["travelbased", "hotelbased"], // ✅ Add these
+        activities: ["travelbased", "hotelbased"],
         tiers: ["tier 1", "tier 2"],
         fields: {
           travelbased: {
@@ -163,7 +172,6 @@ const IoTDataSimulator = () => {
           }
         }
       },
-
       "Employee Commuting": {
         activities: [],
         tiers: ["tier 1", "tier 2"],
@@ -172,28 +180,34 @@ const IoTDataSimulator = () => {
           "tier 2": ["employeeCount", "averageCommuteDistance", "workingDays"]
         }
       },
-
+      // ✅ CORRECTED: Upstream Leased Assets
       "Upstream Leased Assets": {
-        activities: ["energybased", "areabased"],   // ✅ Add both activities
+        activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
         fields: {
           energybased: {
-            "tier 1": ["leasedArea"],  // Tier 1 always uses area × EF
-            "tier 2": ["energyConsumption"] // Tier 2 Case A → energy × EF
+            "tier 1": ["leasedArea"],
+            "tier 2": ["energyConsumption"]
           },
           areabased: {
-            "tier 1": ["leasedArea"],  // same as Tier 1
-            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"] // Tier 2 Case B → area-ratio × BuildingTotal
+            "tier 1": ["leasedArea"],
+            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"]
           }
         }
       },
-
+      // ✅ CORRECTED: Downstream Leased Assets
       "Downstream Leased Assets": {
-        activities: [],
+        activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          "tier 1": ["leasedArea"],
-          "tier 2": ["totalArea", "energyConsumption", "BuildingTotalS1_S2"]
+          energybased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["energyConsumption"]
+          },
+          areabased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"]
+          }
         }
       },
       "Downstream Transport and Distribution": {
@@ -238,39 +252,36 @@ const IoTDataSimulator = () => {
           }
         }
       },
+      // ✅ CORRECTED: Franchises
       "Franchises": {
-        activities: ["emissionbased", "energybased"],  // ✅ Added activities
+        activities: ["emissionbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          // Tier 1 → same for all (count × avgEmission)
-          "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
-
-          // Tier 2 → activity-specific fields
           emissionbased: {
+            "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
             "tier 2": ["franchiseTotalS1Emission", "franchiseTotalS2Emission"]
           },
           energybased: {
+            "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
             "tier 2": ["energyConsumption"]
           }
         }
       },
+      // ✅ CORRECTED: Investments
       "Investments": {
-        activities: ["emissionbased", "energybased"],   // ✅ Added activity types
+        activities: ["investmentbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          // Tier 1 → Revenue based (single value)
-          "tier 1": ["investeeRevenue"],
-
-          // Tier 2 → activity-specific sets
-          emissionbased: {
+          investmentbased: {
+            "tier 1": ["investeeRevenue"],
             "tier 2": ["investeeScope1Emission", "investeeScope2Emission"]
           },
           energybased: {
+            "tier 1": ["investeeRevenue"],
             "tier 2": ["energyConsumption"]
           }
         }
-      },
-
+      }
     }
   };
 
@@ -292,6 +303,77 @@ const IoTDataSimulator = () => {
     setSelectedActivity("");
   }, [selectedCategory]);
 
+  // ✅ NEW: Auto-detect clientId from API URL
+  useEffect(() => {
+    const urlPattern = /clients\/([^\/]+)/;
+    const match = apiUrl.match(urlPattern);
+    if (match && match[1] && match[1] !== ':clientId') {
+      setClientId(match[1]);
+      log(`Auto-detected clientId: ${match[1]}`, "info");
+    }
+  }, [apiUrl]);
+
+  // ✅ NEW: Check if current config requires BuildingTotalS1_S2
+  const requiresScope12Data = () => {
+    const fields = getCurrentFields();
+    return fields.includes('BuildingTotalS1_S2');
+  };
+
+  // ✅ NEW: Fetch Scope 1+2 Total from Backend
+  const fetchScope12Total = async () => {
+    if (!clientId || clientId === ':clientId') {
+      setScope12Error('Please enter a valid Client ID');
+      log('❌ Client ID is required to fetch Scope 1+2 data', 'err');
+      return;
+    }
+
+    setScope12Loading(true);
+    setScope12Error(null);
+    log(`🔄 Fetching Scope 1+2 total for client: ${clientId}`, 'info');
+
+    try {
+      // Extract base URL from apiUrl
+      let baseUrl = 'http://localhost:5000';
+      try {
+        const urlObj = new URL(apiUrl);
+        baseUrl = `${urlObj.protocol}//${urlObj.host}`;
+      } catch (e) {
+        log('Using default base URL: http://localhost:5000', 'warn');
+      }
+
+      const fetchUrl = `${baseUrl}/api/summaries/${encodeURIComponent(clientId)}/scope12-total`;
+      
+      const response = await fetch(fetchUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {})
+        }
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.message || `HTTP ${response.status}`);
+      }
+
+      if (result.success && result.data) {
+        setScope12Data(result.data);
+        setScope12LastFetch(new Date());
+        log(`✅ Scope 1+2 fetched: ${result.data.scope12TotalCO2e} tCO₂e`, 'ok');
+        log(`   Scope 1: ${result.data.scope1CO2e} | Scope 2: ${result.data.scope2CO2e}`, 'info');
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      const errorMsg = `Failed to fetch Scope 1+2: ${error.message}`;
+      setScope12Error(errorMsg);
+      log(`❌ ${errorMsg}`, 'err');
+    } finally {
+      setScope12Loading(false);
+    }
+  };
+
   // Helper functions for generating random data
   const rand = (min, max, decimals = 2) => {
     const value = Math.random() * (max - min) + min;
@@ -299,6 +381,11 @@ const IoTDataSimulator = () => {
   };
 
   const getFieldValue = (fieldName) => {
+    // ✅ PRIORITY: Use fetched Scope 1+2 data if available
+    if (fieldName === 'BuildingTotalS1_S2' && scope12Data) {
+      return scope12Data.scope12TotalCO2e;
+    }
+
     // Generate realistic values based on field type
     if (/consumption|consumed|fuel/i.test(fieldName)) return rand(10, 5000, 2);
     if (/electricity|kwh/i.test(fieldName)) return rand(100, 50000, 2);
@@ -317,13 +404,28 @@ const IoTDataSimulator = () => {
     if (/area/i.test(fieldName)) return rand(100, 50000, 2);
     if (/pattern/i.test(fieldName)) return rand(0.5, 2.0, 2);
     if (/type/i.test(fieldName)) return ["Landfill", "Incineration", "Recycling", "Composting"][Math.floor(Math.random() * 4)];
-    if (/tdLoss|loss/i.test(fieldName)) return rand(0.01, 0.15, 4); // T&D loss factor typically 1-15%
+    if (/tdLoss|loss/i.test(fieldName)) return rand(0.01, 0.15, 4);
+    if (/massEol/i.test(fieldName)) return rand(100, 50000, 2);
+    if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2);
+    if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2);
+    if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2);
+    
+    // Investment-specific fields
+    if (/investeeRevenue/i.test(fieldName)) return rand(100000, 10000000, 2);
+    if (/investeeScope1Emission|investeeS1/i.test(fieldName)) return rand(100, 50000, 2);
+    if (/investeeScope2Emission|investeeS2/i.test(fieldName)) return rand(100, 50000, 2);
+    
+    // Franchise-specific fields
+    if (/franchiseCount/i.test(fieldName)) return rand(1, 500, 0);
+    if (/avgEmission/i.test(fieldName)) return rand(10, 5000, 2);
+    if (/franchiseTotal/i.test(fieldName)) return rand(1000, 100000, 2);
+    
+    // BuildingTotal for leased assets (fallback if not fetched)
+    if (/BuildingTotalS1_S2/i.test(fieldName)) return rand(1000, 50000, 2);
 
-    // End-of-Life specific fields
-    if (/massEol/i.test(fieldName)) return rand(100, 50000, 2); // Mass of end-of-life products in kg
-    if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to disposal
-    if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to landfill
-    if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2); // Fraction going to incineration
+    // Passenger and travel fields
+    if (/passengers/i.test(fieldName)) return rand(1, 100, 0);
+    if (/travelled/i.test(fieldName)) return rand(10, 5000, 2);
 
     // Default range for unspecified fields
     return rand(1, 1000, 2);
@@ -416,13 +518,20 @@ const IoTDataSimulator = () => {
       return;
     }
 
-    const payload = buildPayload();
     const fields = getCurrentFields();
 
     if (fields.length === 0) {
       log("No fields available for current configuration", "err");
       return;
     }
+
+    // ✅ Check if BuildingTotalS1_S2 is required but not fetched
+    if (fields.includes('BuildingTotalS1_S2') && !scope12Data) {
+      log("⚠️ BuildingTotalS1_S2 required but not fetched. Click 'Fetch S1+S2' first!", "warn");
+      return;
+    }
+
+    const payload = buildPayload();
 
     try {
       log(`POST ${url} with fields: [${fields.join(', ')}]`, "info");
@@ -468,6 +577,14 @@ const IoTDataSimulator = () => {
       return;
     }
 
+    const fields = getCurrentFields();
+
+    // ✅ Check if BuildingTotalS1_S2 is required but not fetched
+    if (fields.includes('BuildingTotalS1_S2') && !scope12Data) {
+      log("⚠️ Cannot start auto mode: BuildingTotalS1_S2 required but not fetched!", "err");
+      return;
+    }
+
     const ms = Math.max(300, parseInt(intervalMs || 5000, 10));
     setStatus("RUNNING");
     log(`Auto mode started @ every ${ms} ms`, "ok");
@@ -503,7 +620,8 @@ const IoTDataSimulator = () => {
       log("IoT Data Simulator Ready");
       log("1. Configure your scope, category, and tier selections");
       log("2. Set your API endpoint URL");
-      log("3. Click 'Send once' to test or 'Start auto' for continuous sending");
+      log("3. For Leased Assets: Enter Client ID and fetch Scope 1+2 data");
+      log("4. Click 'Send once' to test or 'Start auto' for continuous sending");
     }
   }, []);
 
@@ -720,6 +838,10 @@ const IoTDataSimulator = () => {
       background: "#15803d",
       color: "white"
     },
+    warning: {
+      background: "#f59e0b",
+      color: "white"
+    },
     disabled: {
       opacity: 0.5,
       cursor: "not-allowed"
@@ -766,10 +888,41 @@ const IoTDataSimulator = () => {
       fontWeight: 700,
       color: "#e5e7eb",
       marginBottom: 12
+    },
+    // ✅ NEW: Scope 1+2 section styles
+    scope12Section: {
+      background: "#1e3a8a",
+      border: "2px solid #3b82f6",
+      borderRadius: isMobile ? 8 : 12,
+      padding: isMobile ? 12 : 16,
+      marginBottom: isMobile ? 12 : 20
+    },
+    scope12Title: {
+      fontSize: isMobile ? 14 : 16,
+      fontWeight: 700,
+      color: "#60a5fa",
+      marginBottom: 12,
+      display: "flex",
+      alignItems: "center",
+      gap: 8
+    },
+    scope12Data: {
+      background: "#0b1220",
+      border: "2px solid #1f2937",
+      borderRadius: isMobile ? 6 : 8,
+      padding: isMobile ? 8 : 12,
+      marginTop: 8
+    },
+    scope12Value: {
+      fontSize: isMobile ? 16 : 20,
+      fontWeight: 800,
+      color: "#22c55e",
+      marginTop: 4
     }
   };
 
   const currentFields = getCurrentFields();
+  const needsScope12 = requiresScope12Data();
 
   return (
     <div style={styles.wrap}>
@@ -846,14 +999,86 @@ const IoTDataSimulator = () => {
                 </div>
               </div>
 
+              {/* ✅ NEW: Scope 1+2 Integration Section */}
+              {needsScope12 && (
+                <div style={styles.scope12Section}>
+                  <div style={styles.scope12Title}>
+                    🔗 Scope 1+2 Data Required
+                  </div>
+                  
+                  <div style={{ marginBottom: 12 }}>
+                    <label style={{...styles.label, color: "#60a5fa"}}>Client ID *</label>
+                    <input
+                      style={styles.input}
+                      type="text"
+                      value={clientId}
+                      onChange={(e) => setClientId(e.target.value)}
+                      placeholder="Enter Client ID or auto-detect from URL"
+                    />
+                  </div>
+
+                  <button
+                    style={{
+                      ...styles.button,
+                      ...styles.warning,
+                      width: "100%",
+                      ...(scope12Loading || !clientId || clientId === ':clientId' ? styles.disabled : {})
+                    }}
+                    onClick={fetchScope12Total}
+                    disabled={scope12Loading || !clientId || clientId === ':clientId'}
+                  >
+                    {scope12Loading ? '⏳ Fetching...' : '📥 Fetch S1+S2 Total'}
+                  </button>
+
+                  {scope12Data && (
+                    <div style={styles.scope12Data}>
+                      <div style={{ fontSize: isMobile ? 11 : 12, color: "#94a3b8" }}>
+                        Scope 1: {scope12Data.scope1CO2e} | Scope 2: {scope12Data.scope2CO2e}
+                      </div>
+                      <div style={styles.scope12Value}>
+                        Total: {scope12Data.scope12TotalCO2e} tCO₂e
+                      </div>
+                      <div style={{ fontSize: isMobile ? 10 : 11, color: "#6b7280", marginTop: 4 }}>
+                        Last fetched: {scope12LastFetch?.toLocaleTimeString() || 'N/A'}
+                      </div>
+                    </div>
+                  )}
+
+                  {scope12Error && (
+                    <div style={{
+                      background: "#7f1d1d",
+                      border: "2px solid #dc2626",
+                      borderRadius: 8,
+                      padding: 12,
+                      marginTop: 12,
+                      fontSize: isMobile ? 11 : 12,
+                      color: "#fca5a5"
+                    }}>
+                      ❌ {scope12Error}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Field Preview */}
               {currentFields.length > 0 && (
                 <div style={styles.fieldPreview}>
                   <div style={styles.fieldTitle}>
                     📋 Generated Fields ({currentFields.length})
+                    {needsScope12 && !scope12Data && (
+                      <span style={{ color: "#f59e0b", marginLeft: 8 }}>⚠️ S1+S2 Required</span>
+                    )}
                   </div>
                   <div style={styles.fieldList}>
-                    {currentFields.join(', ')}
+                    {currentFields.map((field, idx) => (
+                      <span key={field}>
+                        {field}
+                        {field === 'BuildingTotalS1_S2' && scope12Data && (
+                          <span style={{ color: "#22c55e" }}> ✓</span>
+                        )}
+                        {idx < currentFields.length - 1 && ', '}
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
@@ -900,10 +1125,10 @@ const IoTDataSimulator = () => {
                   style={{
                     ...styles.button,
                     ...styles.primary,
-                    ...(currentFields.length === 0 ? styles.disabled : {})
+                    ...(currentFields.length === 0 || (needsScope12 && !scope12Data) ? styles.disabled : {})
                   }}
                   onClick={sendOnce}
-                  disabled={currentFields.length === 0}
+                  disabled={currentFields.length === 0 || (needsScope12 && !scope12Data)}
                 >
                   📤 Send once
                 </button>
@@ -911,10 +1136,10 @@ const IoTDataSimulator = () => {
                   style={{
                     ...styles.button,
                     ...styles.ok,
-                    ...(status === "RUNNING" || currentFields.length === 0 ? styles.disabled : {})
+                    ...(status === "RUNNING" || currentFields.length === 0 || (needsScope12 && !scope12Data) ? styles.disabled : {})
                   }}
                   onClick={startAuto}
-                  disabled={status === "RUNNING" || currentFields.length === 0}
+                  disabled={status === "RUNNING" || currentFields.length === 0 || (needsScope12 && !scope12Data)}
                 >
                   ▶️ Start auto
                 </button>
