@@ -1,11 +1,11 @@
 import axios from "axios";
 
-export const BASE_URL = "http://localhost:5000/"; 
-// export const BASE_URL = "https://api.zerotohero.ebhoom.com";
+export const BASE_URL = "https://api.zerocarbon.greonxpert.com/";
 
 // Create axios instance with base configuration
 const axiosInstance = axios.create({
   baseURL: BASE_URL,
+  timeout: 30000,
   headers: {
     "Content-Type": "application/json",
   },
@@ -39,6 +39,7 @@ axiosInstance.interceptors.response.use(
     if (error.response?.status === 401) {
       // Clear token if unauthorized
       localStorage.removeItem("token");
+      localStorage.removeItem("user");
       
       // Redirect to login if not already there
       if (window.location.pathname !== '/login') {
