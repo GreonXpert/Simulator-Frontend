@@ -4,7 +4,7 @@ import IoTDataSimulator from '../IoTSimulator/IoTSimulator'
 import APIDataSimulator from '../APISimulator/APIDataSimulator'
 
 const TabStructureSimulator = () => {
-    const [activeTab, setActiveTab] = useState('iot')
+    const [activeTab, setActiveTab] = useState('api')
     const [windowWidth, setWindowWidth] = useState(window.innerWidth)
     const navigate = useNavigate();
 
@@ -16,20 +16,21 @@ const TabStructureSimulator = () => {
     }, [])
 
     const tabs = [
-        {
-            id: 'iot',
-            label: 'IoT Data Simulator',
-            icon: '📡',
-            component: <IoTDataSimulator />,
-            gradient: 'from-blue-500 to-green-400'
-        },
+
         {
             id: 'api',
             label: 'API Data Simulator',
             icon: '🔗',
             component: <APIDataSimulator />,
             gradient: 'from-purple-500 to-cyan-400'
-        }
+        },
+        // {
+        //     id: 'iot',
+        //     label: 'IoT Data Simulator',
+        //     icon: '📡',
+        //     component: <IoTDataSimulator />,
+        //     gradient: 'from-blue-500 to-green-400'
+        // }
     ]
 
     // Define breakpoints
