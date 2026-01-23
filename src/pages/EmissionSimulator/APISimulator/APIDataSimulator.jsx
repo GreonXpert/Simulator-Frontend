@@ -19,7 +19,7 @@ const APIDataSimulator = () => {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [selectedTier, setSelectedTier] = useState("tier 1");
 
-  // ✅ NEW: Date selection
+  // Date selection
   const [selectedDate, setSelectedDate] = useState("");
   const [useCustomDate, setUseCustomDate] = useState(false);
 
@@ -344,7 +344,7 @@ const APIDataSimulator = () => {
       }
 
       const fetchUrl = `${baseUrl}/api/summaries/${encodeURIComponent(clientId)}/scope12-total`;
-      
+
       const response = await fetch(fetchUrl, {
         method: 'GET',
         headers: {
@@ -376,7 +376,7 @@ const APIDataSimulator = () => {
     }
   };
 
-  // Helper functions for generating random data
+  // Helper functions for generating random data - ALL VALUES UNDER 50
   const rand = (min, max, decimals = 2) => {
     const value = Math.random() * (max - min) + min;
     return +value.toFixed(decimals);
@@ -387,39 +387,40 @@ const APIDataSimulator = () => {
       return scope12Data.scope12TotalCO2e;
     }
 
-    if (/consumption|consumed|fuel/i.test(fieldName)) return rand(10, 5000, 2);
-    if (/electricity|kwh/i.test(fieldName)) return rand(100, 50000, 2);
-    if (/capacity|nameplate/i.test(fieldName)) return rand(50, 10000, 2);
-    if (/leakage|rate/i.test(fieldName)) return rand(0.1, 50, 3);
-    if (/mass|weight/i.test(fieldName)) return rand(1, 10000, 2);
-    if (/distance|km/i.test(fieldName)) return rand(1, 5000, 2);
-    if (/count|number|units/i.test(fieldName)) return rand(1, 1000, 0);
-    if (/spend|revenue/i.test(fieldName)) return rand(1000, 1000000, 2);
-    if (/percentage|pct/i.test(fieldName)) return rand(0.1, 100, 2);
-    if (/temperature|temp/i.test(fieldName)) return rand(-20, 100, 1);
-    if (/pressure/i.test(fieldName)) return rand(0.5, 50, 2);
-    if (/efficiency/i.test(fieldName)) return rand(0.1, 1.0, 3);
-    if (/days/i.test(fieldName)) return rand(200, 365, 0);
-    if (/nights/i.test(fieldName)) return rand(1, 30, 0);
-    if (/area/i.test(fieldName)) return rand(100, 50000, 2);
-    if (/pattern/i.test(fieldName)) return rand(0.5, 2.0, 2);
-    if (/type/i.test(fieldName)) return ["Landfill", "Incineration", "Recycling", "Composting"][Math.floor(Math.random() * 4)];
-    if (/tdLoss|loss/i.test(fieldName)) return rand(0.01, 0.15, 4);
-    if (/massEol/i.test(fieldName)) return rand(100, 50000, 2);
-    if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2);
-    if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2);
-    if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2);
-    if (/investeeRevenue/i.test(fieldName)) return rand(100000, 10000000, 2);
-    if (/investeeScope1Emission|investeeS1/i.test(fieldName)) return rand(100, 50000, 2);
-    if (/investeeScope2Emission|investeeS2/i.test(fieldName)) return rand(100, 50000, 2);
-    if (/franchiseCount/i.test(fieldName)) return rand(1, 500, 0);
-    if (/avgEmission/i.test(fieldName)) return rand(10, 5000, 2);
-    if (/franchiseTotal/i.test(fieldName)) return rand(1000, 100000, 2);
-    if (/BuildingTotalS1_S2/i.test(fieldName)) return rand(1000, 50000, 2);
-    if (/passengers/i.test(fieldName)) return rand(1, 100, 0);
-    if (/travelled/i.test(fieldName)) return rand(10, 5000, 2);
+    // ⭐ ONLY CHANGE THE NUMBERS ON THESE EXISTING LINES ⭐
+    if (/consumption|consumed|fuel/i.test(fieldName)) return rand(5, 45, 2);  // OLD: (10, 5000, 2)
+    if (/electricity|kwh/i.test(fieldName)) return rand(10, 48, 2);  // OLD: (100, 50000, 2)
+    if (/capacity|nameplate/i.test(fieldName)) return rand(8, 45, 2);  // OLD: (50, 10000, 2)
+    if (/leakage|rate/i.test(fieldName)) return rand(0.5, 10, 3);  // OLD: (0.1, 50, 3)
+    if (/mass|weight/i.test(fieldName)) return rand(5, 48, 2);  // OLD: (1, 10000, 2)
+    if (/distance|km/i.test(fieldName)) return rand(5, 45, 2);  // OLD: (1, 5000, 2)
+    if (/count|number|units/i.test(fieldName)) return rand(1, 48, 0);  // OLD: (1, 1000, 0)
+    if (/spend|revenue/i.test(fieldName)) return rand(10, 49, 2);  // OLD: (1000, 1000000, 2)
+    if (/percentage|pct/i.test(fieldName)) return rand(1, 45, 2);  // OLD: (0.1, 100, 2)
+    if (/temperature|temp/i.test(fieldName)) return rand(10, 45, 1);  // OLD: (-20, 100, 1)
+    if (/pressure/i.test(fieldName)) return rand(1, 45, 2);  // OLD: (0.5, 50, 2)
+    if (/efficiency/i.test(fieldName)) return rand(0.5, 0.98, 3);  // OLD: (0.1, 1.0, 3)
+    if (/days/i.test(fieldName)) return rand(200, 365, 0);  // NO CHANGE
+    if (/nights/i.test(fieldName)) return rand(1, 30, 0);  // NO CHANGE
+    if (/area/i.test(fieldName)) return rand(10, 48, 2);  // OLD: (100, 50000, 2)
+    if (/pattern/i.test(fieldName)) return rand(0.5, 2.0, 2);  // NO CHANGE
+    if (/type/i.test(fieldName)) return ["Landfill", "Incineration", "Recycling", "Composting"][Math.floor(Math.random() * 4)];  // NO CHANGE
+    if (/tdLoss|loss/i.test(fieldName)) return rand(0.01, 0.15, 4);  // NO CHANGE
+    if (/massEol/i.test(fieldName)) return rand(10, 48, 2);  // OLD: (100, 50000, 2)
+    if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2);  // NO CHANGE
+    if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2);  // NO CHANGE
+    if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2);  // NO CHANGE
+    if (/investeeRevenue/i.test(fieldName)) return rand(15, 49, 2);  // OLD: (100000, 10000000, 2)
+    if (/investeeScope1Emission|investeeS1/i.test(fieldName)) return rand(10, 45, 2);  // OLD: (100, 50000, 2)
+    if (/investeeScope2Emission|investeeS2/i.test(fieldName)) return rand(10, 45, 2);  // OLD: (100, 50000, 2)
+    if (/franchiseCount/i.test(fieldName)) return rand(2, 48, 0);  // OLD: (1, 500, 0)
+    if (/avgEmission/i.test(fieldName)) return rand(5, 45, 2);  // OLD: (10, 5000, 2)
+    if (/franchiseTotal/i.test(fieldName)) return rand(20, 49, 2);  // OLD: (1000, 100000, 2)
+    if (/BuildingTotalS1_S2/i.test(fieldName)) return rand(20, 49, 2);  // OLD: (1000, 50000, 2)
+    if (/passengers/i.test(fieldName)) return rand(1, 20, 0);  // OLD: (1, 100, 0)
+    if (/travelled/i.test(fieldName)) return rand(5, 48, 2);  // OLD: (10, 5000, 2)
 
-    return rand(1, 1000, 2);
+    return rand(1, 48, 2);  // OLD: (1, 1000, 2)
   };
 
   const getCurrentFields = () => {
@@ -447,17 +448,14 @@ const APIDataSimulator = () => {
     return data;
   };
 
-  // ✅ MODIFIED: buildPayload now uses selected date if enabled
   const buildPayload = (customTimestamp) => {
     let now;
-    
+
     if (useCustomDate && selectedDate) {
-      // Use selected date with current time
       const [year, month, day] = selectedDate.split('-');
       now = customTimestamp || new Date();
       now.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
     } else {
-      // Use current date/time or custom timestamp
       now = customTimestamp || new Date();
     }
 
@@ -471,7 +469,7 @@ const APIDataSimulator = () => {
 
   const buildBatchPayload = () => {
     let baseDate;
-    
+
     if (useCustomDate && selectedDate) {
       const [year, month, day] = selectedDate.split('-');
       baseDate = new Date();
@@ -557,7 +555,7 @@ const APIDataSimulator = () => {
     try {
       const dateInfo = useCustomDate && selectedDate ? ` [Date: ${selectedDate}]` : '';
       log(`POST ${url} ${batchMode ? `(batch: ${batchSize} entries)` : ''}${dateInfo} with fields: [${fields.join(', ')}]`, "info");
-      
+
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -647,6 +645,7 @@ const APIDataSimulator = () => {
     if (logRef.current && logRef.current.children.length === 0) {
       log("API Data Simulator Ready");
       log("📡 Simulates external API data integration");
+      log("✨ All random values capped under 50 for stability");
       log("1. Configure scope, category, and tier selections");
       log("2. Set your API endpoint URL and authentication");
       log("3. (Optional) Select a custom date for data entries");
@@ -959,7 +958,6 @@ const APIDataSimulator = () => {
       color: "#22c55e",
       marginTop: 4
     },
-    // ✅ NEW: Date section styles
     dateSection: {
       background: "#065f46",
       border: "2px solid #10b981",
@@ -986,7 +984,7 @@ const APIDataSimulator = () => {
       <div style={styles.container}>
         <div style={styles.header}>
           <h1 style={styles.heading}>API Data Simulator</h1>
-          <p style={styles.sub}>Simulate external API data integration for emission scope categories and tiers. Perfect for testing utility APIs, meter APIs, and third-party data sources.</p>
+          <p style={styles.sub}>Simulate external API data integration for emission scope categories and tiers. All random values capped under 50 for stability. Perfect for testing utility APIs, meter APIs, and third-party data sources.</p>
         </div>
 
         <div style={styles.main}>
@@ -1056,12 +1054,12 @@ const APIDataSimulator = () => {
                 </div>
               </div>
 
-              {/* ✅ NEW: Date Selection Section */}
+              {/* Date Selection Section */}
               <div style={styles.dateSection}>
                 <div style={styles.dateTitle}>
                   📅 Date Configuration
                 </div>
-                
+
                 <div style={styles.batchRow}>
                   <input
                     type="checkbox"
@@ -1069,14 +1067,14 @@ const APIDataSimulator = () => {
                     checked={useCustomDate}
                     onChange={(e) => setUseCustomDate(e.target.checked)}
                   />
-                  <label style={{...styles.label, marginBottom: 0, color: "#34d399"}}>
+                  <label style={{ ...styles.label, marginBottom: 0, color: "#34d399" }}>
                     Use Custom Date (default: today's date)
                   </label>
                 </div>
 
                 {useCustomDate && (
                   <div style={{ marginTop: 12 }}>
-                    <label style={{...styles.label, color: "#34d399"}}>Select Date *</label>
+                    <label style={{ ...styles.label, color: "#34d399" }}>Select Date *</label>
                     <input
                       style={styles.input}
                       type="date"
@@ -1085,10 +1083,10 @@ const APIDataSimulator = () => {
                       max={new Date().toISOString().split('T')[0]}
                     />
                     {selectedDate && (
-                      <div style={{ 
-                        marginTop: 8, 
-                        fontSize: isMobile ? 11 : 12, 
-                        color: "#6ee7b7" 
+                      <div style={{
+                        marginTop: 8,
+                        fontSize: isMobile ? 11 : 12,
+                        color: "#6ee7b7"
                       }}>
                         📌 Data will be sent with date: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB')}
                       </div>
@@ -1103,9 +1101,9 @@ const APIDataSimulator = () => {
                   <div style={styles.scope12Title}>
                     🔗 Scope 1+2 Data Required
                   </div>
-                  
+
                   <div style={{ marginBottom: 12 }}>
-                    <label style={{...styles.label, color: "#60a5fa"}}>Client ID *</label>
+                    <label style={{ ...styles.label, color: "#60a5fa" }}>Client ID *</label>
                     <input
                       style={styles.input}
                       type="text"
