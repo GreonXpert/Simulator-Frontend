@@ -19,11 +19,15 @@ const APIDataSimulator = () => {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [selectedTier, setSelectedTier] = useState("tier 1");
 
+  // ✅ NEW: Date selection
+  const [selectedDate, setSelectedDate] = useState("");
+  const [useCustomDate, setUseCustomDate] = useState(false);
+
   // Batch processing
   const [batchMode, setBatchMode] = useState(false);
   const [batchSize, setBatchSize] = useState(5);
 
-  // ✅ NEW: Scope 1+2 API Integration
+  // Scope 1+2 API Integration
   const [clientId, setClientId] = useState("");
   const [scope12Data, setScope12Data] = useState(null);
   const [scope12Loading, setScope12Loading] = useState(false);
@@ -34,7 +38,7 @@ const APIDataSimulator = () => {
   const logRef = useRef(null);
   const timerRef = useRef(null);
 
-  // ✅ FULLY CORRECTED configuration data (matching IoT simulator exactly)
+  // FULLY CORRECTED configuration data
   const scopeConfig = {
     "Scope 1": {
       "Combustion": {
@@ -161,7 +165,6 @@ const APIDataSimulator = () => {
           "tier 2": ["wasteMass"]
         }
       },
-      // ✅ CORRECTED: Business Travel
       "Business Travel": {
         activities: ["travelbased", "hotelbased"],
         tiers: ["tier 1", "tier 2"],
@@ -184,7 +187,6 @@ const APIDataSimulator = () => {
           "tier 2": ["employeeCount", "averageCommuteDistance", "workingDays"]
         }
       },
-      // ✅ CORRECTED: Upstream Leased Assets
       "Upstream Leased Assets": {
         activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
@@ -199,7 +201,6 @@ const APIDataSimulator = () => {
           }
         }
       },
-      // ✅ CORRECTED: Downstream Leased Assets
       "Downstream Leased Assets": {
         activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
@@ -256,7 +257,6 @@ const APIDataSimulator = () => {
           }
         }
       },
-      // ✅ CORRECTED: Franchises
       "Franchises": {
         activities: ["emissionbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
@@ -271,7 +271,6 @@ const APIDataSimulator = () => {
           }
         }
       },
-      // ✅ CORRECTED: Investments
       "Investments": {
         activities: ["investmentbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
@@ -307,7 +306,7 @@ const APIDataSimulator = () => {
     setSelectedActivity("");
   }, [selectedCategory]);
 
-  // ✅ NEW: Auto-detect clientId from API URL
+  // Auto-detect clientId from API URL
   useEffect(() => {
     const urlPattern = /clients\/([^\/]+)/;
     const match = apiUrl.match(urlPattern);
@@ -317,13 +316,13 @@ const APIDataSimulator = () => {
     }
   }, [apiUrl]);
 
-  // ✅ NEW: Check if current config requires BuildingTotalS1_S2
+  // Check if current config requires BuildingTotalS1_S2
   const requiresScope12Data = () => {
     const fields = getCurrentFields();
     return fields.includes('BuildingTotalS1_S2');
   };
 
-  // ✅ NEW: Fetch Scope 1+2 Total from Backend
+  // Fetch Scope 1+2 Total from Backend
   const fetchScope12Total = async () => {
     if (!clientId || clientId === ':clientId') {
       setScope12Error('Please enter a valid Client ID');
@@ -336,7 +335,6 @@ const APIDataSimulator = () => {
     log(`🔄 Fetching Scope 1+2 total for client: ${clientId}`, 'info');
 
     try {
-      // Extract base URL from apiUrl
       let baseUrl = 'http://localhost:5000';
       try {
         const urlObj = new URL(apiUrl);
@@ -385,12 +383,10 @@ const APIDataSimulator = () => {
   };
 
   const getFieldValue = (fieldName) => {
-    // ✅ PRIORITY: Use fetched Scope 1+2 data if available
     if (fieldName === 'BuildingTotalS1_S2' && scope12Data) {
       return scope12Data.scope12TotalCO2e;
     }
 
-    // Generate realistic values based on field type
     if (/consumption|consumed|fuel/i.test(fieldName)) return rand(10, 5000, 2);
     if (/electricity|kwh/i.test(fieldName)) return rand(100, 50000, 2);
     if (/capacity|nameplate/i.test(fieldName)) return rand(50, 10000, 2);
@@ -413,25 +409,16 @@ const APIDataSimulator = () => {
     if (/toDisposal/i.test(fieldName)) return rand(0.1, 1.0, 2);
     if (/toLandfill/i.test(fieldName)) return rand(0.1, 1.0, 2);
     if (/toIncineration/i.test(fieldName)) return rand(0.1, 1.0, 2);
-    
-    // Investment-specific fields
     if (/investeeRevenue/i.test(fieldName)) return rand(100000, 10000000, 2);
     if (/investeeScope1Emission|investeeS1/i.test(fieldName)) return rand(100, 50000, 2);
     if (/investeeScope2Emission|investeeS2/i.test(fieldName)) return rand(100, 50000, 2);
-    
-    // Franchise-specific fields
     if (/franchiseCount/i.test(fieldName)) return rand(1, 500, 0);
     if (/avgEmission/i.test(fieldName)) return rand(10, 5000, 2);
     if (/franchiseTotal/i.test(fieldName)) return rand(1000, 100000, 2);
-    
-    // BuildingTotal for leased assets (fallback if not fetched)
     if (/BuildingTotalS1_S2/i.test(fieldName)) return rand(1000, 50000, 2);
-
-    // Passenger and travel fields
     if (/passengers/i.test(fieldName)) return rand(1, 100, 0);
     if (/travelled/i.test(fieldName)) return rand(10, 5000, 2);
 
-    // Default range for unspecified fields
     return rand(1, 1000, 2);
   };
 
@@ -441,13 +428,11 @@ const APIDataSimulator = () => {
     const categoryConfig = scopeConfig[selectedScope][selectedCategory];
     if (!categoryConfig) return [];
 
-    // For categories with activities
     if (categoryConfig.activities && categoryConfig.activities.length > 0) {
       if (!selectedActivity) return [];
       return categoryConfig.fields[selectedActivity]?.[selectedTier] || [];
     }
 
-    // For categories without activities
     return categoryConfig.fields[selectedTier] || [];
   };
 
@@ -462,8 +447,20 @@ const APIDataSimulator = () => {
     return data;
   };
 
+  // ✅ MODIFIED: buildPayload now uses selected date if enabled
   const buildPayload = (customTimestamp) => {
-    const now = customTimestamp || new Date();
+    let now;
+    
+    if (useCustomDate && selectedDate) {
+      // Use selected date with current time
+      const [year, month, day] = selectedDate.split('-');
+      now = customTimestamp || new Date();
+      now.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      // Use current date/time or custom timestamp
+      now = customTimestamp || new Date();
+    }
+
     return {
       dataValues: makeDataValues(),
       date: now.toLocaleDateString("en-GB"),
@@ -473,12 +470,20 @@ const APIDataSimulator = () => {
   };
 
   const buildBatchPayload = () => {
-    const now = new Date();
+    let baseDate;
+    
+    if (useCustomDate && selectedDate) {
+      const [year, month, day] = selectedDate.split('-');
+      baseDate = new Date();
+      baseDate.setFullYear(parseInt(year), parseInt(month) - 1, parseInt(day));
+    } else {
+      baseDate = new Date();
+    }
+
     const batch = [];
 
     for (let i = 0; i < batchSize; i++) {
-      // Generate timestamps over the last hour
-      const timestamp = new Date(now.getTime() - (i * 10 * 60 * 1000)); // 10-minute intervals
+      const timestamp = new Date(baseDate.getTime() - (i * 10 * 60 * 1000));
       batch.push(buildPayload(timestamp));
     }
 
@@ -542,7 +547,6 @@ const APIDataSimulator = () => {
       return;
     }
 
-    // ✅ Check if BuildingTotalS1_S2 is required but not fetched
     if (fields.includes('BuildingTotalS1_S2') && !scope12Data) {
       log("⚠️ BuildingTotalS1_S2 required but not fetched. Click 'Fetch S1+S2' first!", "warn");
       return;
@@ -551,7 +555,9 @@ const APIDataSimulator = () => {
     const payload = batchMode ? buildBatchPayload() : buildPayload();
 
     try {
-      log(`POST ${url} ${batchMode ? `(batch: ${batchSize} entries)` : ''} with fields: [${fields.join(', ')}]`, "info");
+      const dateInfo = useCustomDate && selectedDate ? ` [Date: ${selectedDate}]` : '';
+      log(`POST ${url} ${batchMode ? `(batch: ${batchSize} entries)` : ''}${dateInfo} with fields: [${fields.join(', ')}]`, "info");
+      
       const res = await fetch(url, {
         method: "POST",
         headers: {
@@ -567,11 +573,12 @@ const APIDataSimulator = () => {
 
       if (res.ok) {
         setSuccess(prev => prev + (batchMode ? batchSize : 1));
-        log(`✅ ${res.status} OK — ${batchMode ? 'Batch' : 'Single'} API data sent successfully`, "ok");
+        log(`✅ ${res.status} OK — ${batchMode ? 'Batch' : 'Single'} API data sent successfully${dateInfo}`, "ok");
         if (!batchMode) {
+          log(`   Date: ${payload.date} | Time: ${payload.time}`, "info");
           log(`   Fields: ${JSON.stringify(payload.dataValues, null, 2)}`, "info");
         } else {
-          log(`   Batch size: ${batchSize} entries spanning ${batchSize * 10} minutes`, "info");
+          log(`   Batch size: ${batchSize} entries`, "info");
         }
       } else {
         log(`❌ ${res.status} — ${text.slice(0, 200)}`, "err");
@@ -600,7 +607,6 @@ const APIDataSimulator = () => {
 
     const fields = getCurrentFields();
 
-    // ✅ Check if BuildingTotalS1_S2 is required but not fetched
     if (fields.includes('BuildingTotalS1_S2') && !scope12Data) {
       log("⚠️ Cannot start auto mode: BuildingTotalS1_S2 required but not fetched!", "err");
       return;
@@ -608,7 +614,8 @@ const APIDataSimulator = () => {
 
     const ms = Math.max(300, parseInt(intervalMs || 15000, 10));
     setStatus("RUNNING");
-    log(`API Auto mode started @ every ${ms} ms ${batchMode ? `(batch: ${batchSize})` : '(single)'}`, "ok");
+    const dateInfo = useCustomDate && selectedDate ? ` with date: ${selectedDate}` : '';
+    log(`API Auto mode started @ every ${ms} ms ${batchMode ? `(batch: ${batchSize})` : '(single)'}${dateInfo}`, "ok");
     log(`Configuration: ${selectedScope} > ${selectedCategory} > ${selectedActivity || 'N/A'} > ${selectedTier}`, "info");
     timerRef.current = setInterval(sendOnce, ms);
   };
@@ -642,9 +649,10 @@ const APIDataSimulator = () => {
       log("📡 Simulates external API data integration");
       log("1. Configure scope, category, and tier selections");
       log("2. Set your API endpoint URL and authentication");
-      log("3. For Leased Assets: Enter Client ID and fetch Scope 1+2 data");
-      log("4. Choose single or batch mode for data transmission");
-      log("5. Click 'Send once' to test or 'Start auto' for continuous data flow");
+      log("3. (Optional) Select a custom date for data entries");
+      log("4. For Leased Assets: Enter Client ID and fetch Scope 1+2 data");
+      log("5. Choose single or batch mode for data transmission");
+      log("6. Click 'Send once' to test or 'Start auto' for continuous data flow");
     }
   }, []);
 
@@ -673,7 +681,7 @@ const APIDataSimulator = () => {
     return categoryConfig?.activities && categoryConfig.activities.length > 0;
   };
 
-  // Styles matching IoT simulator but with API-specific colors
+  // Styles
   const styles = {
     wrap: {
       width: "100vw",
@@ -922,7 +930,6 @@ const APIDataSimulator = () => {
       color: "#e5e7eb",
       marginBottom: 12
     },
-    // ✅ NEW: Scope 1+2 section styles
     scope12Section: {
       background: "#1e3a8a",
       border: "2px solid #3b82f6",
@@ -951,6 +958,23 @@ const APIDataSimulator = () => {
       fontWeight: 800,
       color: "#22c55e",
       marginTop: 4
+    },
+    // ✅ NEW: Date section styles
+    dateSection: {
+      background: "#065f46",
+      border: "2px solid #10b981",
+      borderRadius: isMobile ? 8 : 12,
+      padding: isMobile ? 12 : 16,
+      marginBottom: isMobile ? 12 : 20
+    },
+    dateTitle: {
+      fontSize: isMobile ? 14 : 16,
+      fontWeight: 700,
+      color: "#34d399",
+      marginBottom: 12,
+      display: "flex",
+      alignItems: "center",
+      gap: 8
     }
   };
 
@@ -1032,7 +1056,48 @@ const APIDataSimulator = () => {
                 </div>
               </div>
 
-              {/* ✅ NEW: Scope 1+2 Integration Section */}
+              {/* ✅ NEW: Date Selection Section */}
+              <div style={styles.dateSection}>
+                <div style={styles.dateTitle}>
+                  📅 Date Configuration
+                </div>
+                
+                <div style={styles.batchRow}>
+                  <input
+                    type="checkbox"
+                    style={styles.checkbox}
+                    checked={useCustomDate}
+                    onChange={(e) => setUseCustomDate(e.target.checked)}
+                  />
+                  <label style={{...styles.label, marginBottom: 0, color: "#34d399"}}>
+                    Use Custom Date (default: today's date)
+                  </label>
+                </div>
+
+                {useCustomDate && (
+                  <div style={{ marginTop: 12 }}>
+                    <label style={{...styles.label, color: "#34d399"}}>Select Date *</label>
+                    <input
+                      style={styles.input}
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      max={new Date().toISOString().split('T')[0]}
+                    />
+                    {selectedDate && (
+                      <div style={{ 
+                        marginTop: 8, 
+                        fontSize: isMobile ? 11 : 12, 
+                        color: "#6ee7b7" 
+                      }}>
+                        📌 Data will be sent with date: {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-GB')}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Scope 1+2 Integration Section */}
               {needsScope12 && (
                 <div style={styles.scope12Section}>
                   <div style={styles.scope12Title}>
