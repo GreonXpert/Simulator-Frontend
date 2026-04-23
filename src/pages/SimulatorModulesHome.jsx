@@ -1,125 +1,197 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-const cardBase = {
-  display: "flex",
-  gap: 12,
-  alignItems: "center",
-  padding: "18px 18px",
-  borderRadius: 16,
-  border: "1px solid rgba(255,255,255,0.08)",
-  background: "rgba(255,255,255,0.04)",
-  cursor: "pointer",
-  transition: "transform .18s ease, background .2s ease",
-  color: "#fff",
-};
+const SimulatorModulesHome = () => {
+  const navigate = useNavigate();
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
-export default function SimulatorModulesHome() {
-  const nav = useNavigate();
+  useEffect(() => {
+    const link = document.createElement('link');
+    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&display=swap';
+    link.rel = 'stylesheet';
+    document.head.appendChild(link);
 
-  const Page = {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  const isMobile = windowWidth <= 768;
+
+  const styles = {
     wrap: {
-      width: "100vw",
+      width: "100%",
       minHeight: "100vh",
-      padding: 24,
-      display: "grid",
-      placeItems: "center",
-      background:
-        "radial-gradient(1200px 600px at 10% -10%, rgba(56,189,248,0.12), transparent 60%), radial-gradient(1000px 500px at 100% 0%, rgba(132,204,22,0.10), transparent 55%), linear-gradient(135deg,#0b1221 0%, #0f172a 40%, #0e1322 100%)",
-      color: "#e5e7eb",
+      background: "#F4F5F2",
+      color: "#0E1512",
+      fontFamily: "'Inter', sans-serif",
+      display: "flex",
+      flexDirection: "column",
+      alignItems: "center",
+      padding: isMobile ? "40px 20px" : "80px 40px",
+      boxSizing: "border-box"
     },
-    shell: {
-      width: "min(1100px, 92vw)",
-      display: "grid",
-      gap: 20,
+    container: {
+      width: "100%",
+      maxWidth: "1000px"
     },
     header: {
-      padding: "14px 18px",
-      borderRadius: 18,
-      border: "1px solid rgba(255,255,255,0.06)",
-      background: "rgba(255,255,255,0.03)",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "space-between",
+      textAlign: "center",
+      marginBottom: "80px"
     },
-    title: { margin: 0, fontSize: 20, fontWeight: 800 },
-    sub: { margin: 0, color: "#9ca3af", fontSize: 13 },
-
+    brand: {
+      fontSize: "14px",
+      fontWeight: 600,
+      color: "#34D399",
+      textTransform: "uppercase",
+      letterSpacing: "0.2em",
+      marginBottom: "16px"
+    },
+    title: {
+      fontSize: isMobile ? "48px" : "80px",
+      fontFamily: "'Instrument Serif', serif",
+      fontWeight: 400,
+      margin: 0,
+      lineHeight: 1
+    },
+    italic: {
+      fontStyle: "italic"
+    },
+    subtitle: {
+      fontSize: "18px",
+      color: "#6B7280",
+      marginTop: "24px",
+      maxWidth: "600px",
+      marginInline: "auto",
+      lineHeight: 1.5
+    },
     grid: {
       display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 16,
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+      gap: "32px",
+      width: "100%"
     },
-    cardEmission: {
-      ...cardBase,
-      "--gFrom": "#0ea5e9",
-      "--gTo": "#22d3ee",
+    card: {
+      background: "#FFFFFF",
+      borderRadius: "24px",
+      border: "1px solid #E6E8E3",
+      padding: "48px",
+      textAlign: "left",
+      cursor: "pointer",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "space-between",
+      minHeight: "320px",
+      position: "relative",
+      overflow: "hidden"
     },
-    cardReduction: {
-      ...cardBase,
-      "--gFrom": "#22c55e",
-      "--gTo": "#84cc16",
+    cardHover: {
+      transform: "translateY(-8px)",
+      borderColor: "#34D399",
+      boxShadow: "0 20px 40px rgba(14, 21, 18, 0.05)"
     },
-    icon: { fontSize: 22, filter: "drop-shadow(0 2px 4px rgba(0,0,0,.35))" },
-    textCol: { display: "grid", gap: 2 },
-    h: { margin: 0, fontWeight: 800, letterSpacing: 0.3, fontSize: 16, color: "#fff", },
-    p: { margin: 0, color: "#94a3b8", fontSize: 13 },
-    glow: {
+    cardNum: {
+      fontSize: "12px",
+      fontWeight: 600,
+      color: "#34D399",
+      marginBottom: "40px"
+    },
+    cardTitle: {
+      fontSize: "32px",
+      fontFamily: "'Instrument Serif', serif",
+      marginBottom: "16px"
+    },
+    cardDesc: {
+      fontSize: "14px",
+      color: "#6B7280",
+      lineHeight: 1.6
+    },
+    arrow: {
       position: "absolute",
-      inset: 0,
-      borderRadius: 16,
-      pointerEvents: "none",
-      background: "linear-gradient(135deg, var(--gFrom), var(--gTo))",
-      opacity: 0.15,
+      right: "48px",
+      bottom: "48px",
+      fontSize: "24px",
+      color: "#0E1512"
     },
+    footer: {
+      marginTop: "120px",
+      paddingTop: "40px",
+      borderTop: "1px solid #E6E8E3",
+      width: "100%",
+      textAlign: "center",
+      fontSize: "12px",
+      color: "#9CA3AF",
+      letterSpacing: "0.05em"
+    }
   };
 
+  const [hovered, setHovered] = useState(null);
+
+  const modules = [
+    {
+      id: "iot",
+      num: "MODULE 01",
+      title: "IoT Parameter Sync",
+      desc: "Simulate real-time operational device data with high-fidelity stochastic or linear distribution models.",
+      path: "/simulator/emission/iot"
+    },
+    {
+      id: "api",
+      num: "MODULE 02",
+      title: "API Gateway Relay",
+      desc: "Comprehensive API vector emulation for bulk historical ingestion or live mainframe activity mirroring.",
+      path: "/simulator/emission/api"
+    }
+  ];
+
   return (
-    <div style={Page.wrap}>
-      <div style={Page.shell}>
-        <header style={Page.header}>
-          <div>
-            <h3 style={Page.title}>Simulator Modules</h3>
-            <p style={Page.sub}>Choose the module to launch a simulator.</p>
-          </div>
+    <div style={styles.wrap}>
+      <div style={styles.container}>
+        <header style={styles.header}>
+          <div style={styles.brand}>Ecological Intelligence</div>
+          <h1 style={styles.title}>
+            GreOn <span style={styles.italic}>IQ</span> <span style={{ color: "#34D399" }}>Simulators</span>
+          </h1>
+          <p style={styles.subtitle}>
+            A premium collection of ecological emulation tools. Composed for researchers and engineers seeking high-precision baseline modeling.
+          </p>
         </header>
 
-        <section style={Page.grid}>
-          {/* Emission card -> to TabStructureSimulator (unchanged file) */}
-          <button
-            style={Page.cardEmission}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-            onClick={() => nav("/simulator/emission")}
-          >
-            <div style={{ position: "relative" }}>
-              <div style={Page.glow} />
+        <div style={styles.grid}>
+          {modules.map((m, idx) => (
+            <div
+              key={m.id}
+              style={{
+                ...styles.card,
+                ...(hovered === m.id ? styles.cardHover : {})
+              }}
+              onMouseEnter={() => setHovered(m.id)}
+              onMouseLeave={() => setHovered(null)}
+              onClick={() => navigate(m.path)}
+            >
+              <div>
+                <div style={styles.cardNum}>{m.num}</div>
+                <div style={styles.cardTitle}>{m.title}</div>
+                <div style={styles.cardDesc}>{m.desc}</div>
+              </div>
+              <div style={{
+                ...styles.arrow,
+                transform: hovered === m.id ? "translateX(10px)" : "translateX(0)",
+                transition: "transform 0.3s"
+              }}>
+                →
+              </div>
             </div>
-            <span style={Page.icon}>🛰️</span>
-            <div style={Page.textCol}>
-              <p style={Page.title}>Emission Tracking</p>
-              <p style={Page.p}>Generate & stream operational activity.</p>
-            </div>
-          </button>
+          ))}
+        </div>
 
-          {/* Reduction card -> to Reduction Tab Structure */}
-          <button
-            style={Page.cardReduction}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.06)")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(255,255,255,0.04)")}
-            onClick={() => nav("/simulator/reduction")}
-          >
-            <div style={{ position: "relative" }}>
-              <div style={Page.glow} />
-            </div>
-            <span style={Page.icon}>♻️</span>
-            <div style={Page.textCol}>
-              <p style={Page.title}>Reduction Strategies</p>
-              <p style={Page.p}>Simulate baseline/project data & net reduction.</p>
-            </div>
-          </button>
-        </section>
+        <footer style={styles.footer}>
+          &copy; 2026 GREON INTELLIGENCE QUOTIENT &middot; EMISSION CONTROL PROTOCOL
+        </footer>
       </div>
     </div>
   );
-}
+};
+
+export default SimulatorModulesHome;

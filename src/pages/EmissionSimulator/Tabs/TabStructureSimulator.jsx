@@ -24,13 +24,13 @@ const TabStructureSimulator = () => {
             component: <APIDataSimulator />,
             gradient: 'from-purple-500 to-cyan-400'
         },
-        // {
-        //     id: 'iot',
-        //     label: 'IoT Data Simulator',
-        //     icon: '📡',
-        //     component: <IoTDataSimulator />,
-        //     gradient: 'from-blue-500 to-green-400'
-        // }
+        {
+            id: 'iot',
+            label: 'IoT Data Simulator',
+            icon: '📡',
+            component: <IoTDataSimulator />,
+            gradient: 'from-blue-500 to-green-400'
+        }
     ]
 
     // Define breakpoints

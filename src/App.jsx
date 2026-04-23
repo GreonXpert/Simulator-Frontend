@@ -1,7 +1,9 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import SimulatorModulesHome from "./pages/SimulatorModulesHome";
-import TabStructureSimulator from "./pages/EmissionSimulator/Tabs/TabStructureSimulator"; // existing file (UNCHANGED)
-import ReductionTabStructure from "./pages/ReductionSimulator/Tabs/ReductionTabStructure";     // new file
+import TabStructureSimulator from "./pages/EmissionSimulator/Tabs/TabStructureSimulator";
+import IoTDataSimulator from "./pages/EmissionSimulator/IoTSimulator/IoTSimulator";
+import APIDataSimulator from "./pages/EmissionSimulator/APISimulator/APIDataSimulator";
+import ReductionTabStructure from "./pages/ReductionSimulator/Tabs/ReductionTabStructure";
 
 
 function App() {
@@ -14,10 +16,12 @@ function App() {
         {/* Modules hub */}
         <Route path="/simulator" element={<SimulatorModulesHome />} />
 
-        {/* Emission module → uses your existing TabStructureSimulator exactly as-is */}
+        {/* Emission modules */}
         <Route path="/simulator/emission" element={<TabStructureSimulator />} />
+        <Route path="/simulator/emission/iot" element={<IoTDataSimulator />} />
+        <Route path="/simulator/emission/api" element={<APIDataSimulator />} />
 
-        {/* Reduction module → uses the new reduction tab structure */}
+        {/* Reduction module */}
         <Route path="/simulator/reduction" element={<ReductionTabStructure />} />
       </Routes>
     </BrowserRouter>
