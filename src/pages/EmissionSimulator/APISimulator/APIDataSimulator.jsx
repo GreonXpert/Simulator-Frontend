@@ -55,7 +55,7 @@ const APIDataSimulator = () => {
 
   // Calculation Logic for controlled distribution
   const distributions = React.useMemo(() => {
-    const durations = { "Monthly": 30 * 24 * 60, "Quarterly": 91.25 * 24 * 60, "Half-yearly": 182.5 * 24 * 60, "Yearly": 365 * 24 * 60 };
+    const durations = { "Daily": 24 * 60, "Monthly": 30 * 24 * 60, "Quarterly": 91.25 * 24 * 60, "Half-yearly": 182.5 * 24 * 60, "Yearly": 365 * 24 * 60 };
     const targetDurations = { "Monthly": 30 * 24 * 60, "Daily": 24 * 60, "Hourly": 60, "Minutes": parseInt(minuteInterval) || 1 };
     const sourceMins = durations[sourcePeriod] || durations["Yearly"];
     const targetMins = targetDurations[targetFrequency] || targetDurations["Monthly"];
@@ -330,7 +330,7 @@ const APIDataSimulator = () => {
                  <div style={styles.grid}>
                     <div><label style={styles.label}>Pool Total</label><input style={styles.input} type="number" value={totalValue} onChange={e=>setTotalValue(parseFloat(e.target.value))}/></div>
                     <div><label style={styles.label}>Source Block</label><select style={styles.select} value={sourcePeriod} onChange={e=>setSourcePeriod(e.target.value)}>
-                      <option value="Yearly">Annual Block</option><option value="Half-yearly">H1/H2 Block</option><option value="Quarterly">Quarterly Block</option><option value="Monthly">Monthly Block</option>
+                 <option value="Daily">Daily Block</option>      <option value="Yearly">Annual Block</option><option value="Half-yearly">H1/H2 Block</option><option value="Quarterly">Quarterly Block</option><option value="Monthly">Monthly Block</option>
                     </select></div>
                  </div>
                  <div style={styles.grid}>
