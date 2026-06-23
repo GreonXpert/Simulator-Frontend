@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 const IoTDataSimulator = () => {
+  const navigate = useNavigate();
   // Inject Google Fonts
   useEffect(() => {
     const link = document.createElement('link');
@@ -40,8 +42,8 @@ const IoTDataSimulator = () => {
   // ✅ Scope 1+2 API Integration state
   const [scope12Data, setScope12Data] = useState(null);
   const [scope12Loading, setScope12Loading] = useState(false);
-  const [scope12Error, setScope12Error] = useState(null);
-  const [scope12LastFetch, setScope12LastFetch] = useState(null);
+  const [_scope12Error, setScope12Error] = useState(null);
+  const [_scope12LastFetch, setScope12LastFetch] = useState(null);
 
   // Calculation Logic for controlled distribution
   const distributions = React.useMemo(() => {
@@ -241,10 +243,11 @@ const IoTDataSimulator = () => {
 
   const sendOnce = async () => {
     if (!baseUrl || !clientId || !nodeId || !scopeId) {
-       log("Missing configuration fields", "err");
+       log("Missing configuration fields — fill all fields", "err");
        return;
     }
-    const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/${apiKey}/api-data`;
+    if (!apiKey) { log("❌ API Key is required — enter your DC_IOT key in API Credential", "err"); return; }
+    const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/iot-data`;
     if (simMode === "controlled" && sendsCompleted >= distributions.totalIntervals) {
       log("🎉 Cycle completed", "ok");
       stopAuto();
@@ -258,7 +261,7 @@ const IoTDataSimulator = () => {
     const payload = buildPayload();
     try {
       log(`POST → ${url.split('/').pop()}`, "info");
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": apiKey }, body: JSON.stringify(payload) });
       setLastHttp(res.status);
       setTotalSent(prev => prev + 1);
       if (res.ok) {
@@ -266,7 +269,7 @@ const IoTDataSimulator = () => {
         if (simMode === "controlled") setSendsCompleted(prev => prev + 1);
         log(`✓ Transmission Success`, "ok");
       } else { log(`✖ ${res.status}`, "err"); }
-    } catch (e) { setLastHttp("ERR"); log(`✖ Network Fail`, "err"); }
+    } catch { setLastHttp("ERR"); log(`✖ Network Fail`, "err"); }
   };
 
   const startAuto = () => {
@@ -628,15 +631,15 @@ const IoTDataSimulator = () => {
                     </select>
                  </div>
               </div>
-              {currentFields.length > 0 && (
+              {getCurrentFields().length > 0 && (
                 <div style={{...styles.urlPreview, background: "#FFFFFF", color: "#34D399", fontWeight: 600}}>
-                  Active Schema: {currentFields.join(' · ')}
+                  Active Schema: {getCurrentFields().join(' · ')}
                 </div>
               )}
             </div>
 
             {/* Baseline Sync */}
-            {needsScope12 && (
+            {requiresScope12Data() && (
               <div style={{...styles.card, border: "2px solid #E6E8E3", background: "#F9FAF9"}}>
                 <div style={styles.sectionHeading}>⊷ Baseline Synchronisation</div>
                 <label style={styles.label}>Client Reference</label>
@@ -655,18 +658,34 @@ const IoTDataSimulator = () => {
               <input style={styles.input} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
               <div style={styles.grid}>
                 <div>
+                   <label style={styles.label}>Client Reference</label>
+                   <input style={styles.input} value={clientId} onChange={(e) => setClientId(e.target.value)} />
+                </div>
+                <div>
                    <label style={styles.label}>Node Serial</label>
                    <input style={styles.input} value={nodeId} onChange={(e) => setNodeId(e.target.value)} />
                 </div>
+              </div>
+              <div style={styles.grid}>
                 <div>
-                   <label style={styles.label}>API Credential</label>
+                   <label style={styles.label}>Scope Descriptor</label>
+                   <input style={styles.input} value={scopeId} onChange={(e) => setScopeId(e.target.value)} />
+                </div>
+                <div>
+                   <label style={styles.label}>API Credential (DC_IOT Key)</label>
                    <input style={styles.input} type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
                 </div>
               </div>
               <label style={styles.label}>Cycle Interval (MS)</label>
               <input style={styles.input} type="number" value={intervalMs} onChange={(e) => setIntervalMs(e.target.value)} />
               <div style={styles.urlPreview}>
-                Live Route: {`${baseUrl}/clients/${clientId || "•"}/nodes/${nodeId || "•"}/scopes/${scopeId || "•"}/${apiKey || "•"}/api-data`}
+                <div style={{marginBottom: "6px", color: "#6B7280"}}>📡 Request Preview</div>
+                <div><span style={{color: "#34D399"}}>POST</span> {`${baseUrl}/clients/${clientId||"•"}/nodes/${nodeId||"•"}/scopes/${scopeId||"•"}/iot-data`}</div>
+                <div style={{marginTop: "8px", borderTop: "1px solid #E6E8E3", paddingTop: "8px"}}>
+                  <div style={{color: "#6B7280", marginBottom: "4px"}}>Headers sent with request:</div>
+                  <div><span style={{color: "#F59E0B"}}>Content-Type:</span> application/json</div>
+                  <div><span style={{color: "#F59E0B"}}>X-API-Key:</span> <span style={{color: apiKey ? "#34D399" : "#EF4444"}}>{apiKey ? `${apiKey.substring(0, 8)}${"•".repeat(12)} (key hidden for security)` : "⚠ Not entered yet"}</span></div>
+                </div>
               </div>
             </div>
 

@@ -40,8 +40,8 @@ const APIDataSimulator = () => {
   const [selectedTier, setSelectedTier] = useState("tier 1");
 
   // Date selection
-  const [selectedDate, setSelectedDate] = useState("");
-  const [useCustomDate, setUseCustomDate] = useState(false);
+  const [selectedDate, _setSelectedDate] = useState("");
+  const [useCustomDate, _setUseCustomDate] = useState(false);
 
   // Batch
   const [batchMode, setBatchMode] = useState(false);
@@ -49,9 +49,9 @@ const APIDataSimulator = () => {
 
   // ✅ Scope 1+2 Integration state
   const [scope12Data, setScope12Data] = useState(null);
-  const [scope12Loading, setScope12Loading] = useState(false);
-  const [scope12Error, setScope12Error] = useState(null);
-  const [scope12LastFetch, setScope12LastFetch] = useState(null);
+  const [_scope12Loading, setScope12Loading] = useState(false);
+  const [_scope12Error, setScope12Error] = useState(null);
+  const [_scope12LastFetch, setScope12LastFetch] = useState(null);
 
   // Calculation Logic for controlled distribution
   const distributions = React.useMemo(() => {
@@ -144,9 +144,9 @@ const APIDataSimulator = () => {
   useEffect(() => { setSelectedCategory(""); setSelectedActivity(""); }, [selectedScope]);
   useEffect(() => { setSelectedActivity(""); }, [selectedCategory]);
 
-  const requiresScope12Data = () => getCurrentFields().includes('BuildingTotalS1_S2');
+  const _requiresScope12Data = () => getCurrentFields().includes('BuildingTotalS1_S2');
 
-  const fetchScope12Total = async () => {
+  const _fetchScope12Total = async () => {
     if (!clientId) { log('❌ Client Reference required', 'err'); return; }
     setScope12Loading(true); setScope12Error(null);
     log(`🔄 Syncing with: ${clientId}`, 'info');
@@ -221,15 +221,16 @@ const APIDataSimulator = () => {
   };
 
   const sendOnce = async () => {
-    if (!baseUrl || !clientId || !nodeId || !scopeId) { log("Configuration incomplete", "err"); return; }
-    const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/${apiKey}/api-data`;
+    if (!baseUrl || !clientId || !nodeId || !scopeId) { log("Configuration incomplete — fill all fields", "err"); return; }
+    if (!apiKey) { log("❌ API Key is required — enter your DC_API key in Credential Secret", "err"); return; }
+    const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/api-data`;
     if (simMode === "controlled" && sendsCompleted >= distributions.totalIntervals) { log("🎉 Cycle complete", "ok"); stopAuto(); return; }
     const fields = getCurrentFields();
     if (fields.length === 0) { log("Schema required", "err"); return; }
     const payload = batchMode ? buildBatchPayload() : buildPayload();
     try {
       log(`POST → ${batchMode ? 'Batch' : 'Packet'}`, "info");
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": apiKey }, body: JSON.stringify(payload) });
       const count = batchMode ? payload.actualBatchSize : 1;
       setLastHttp(res.status);
       setTotalSent(prev => prev + count);
@@ -238,7 +239,7 @@ const APIDataSimulator = () => {
         if (simMode === "controlled") setSendsCompleted(prev => prev + count);
         log(`✓ Multi-vector success`, "ok");
       } else log(`✖ Fail: ${res.status}`, "err");
-    } catch (e) { log(`✖ Connection error`, "err"); }
+    } catch { log(`✖ Connection error`, "err"); }
   };
 
   const startAuto = () => {
@@ -381,7 +382,15 @@ const APIDataSimulator = () => {
                  <div><label style={styles.label}>Credential Secret</label><input style={styles.input} type="password" value={apiKey} onChange={e=>setApiKey(e.target.value)}/></div>
               </div>
               <label style={styles.label}>Cyclical Interval (MS)</label><input style={styles.input} type="number" value={intervalMs} onChange={e=>setIntervalMs(e.target.value)}/>
-              <div style={styles.urlPreview}>Live Stream Route: {`${baseUrl}/clients/${clientId||"•"}/nodes/${nodeId||"•"}/scopes/${scopeId||"•"}/${apiKey||"•"}/api-data`}</div>
+              <div style={styles.urlPreview}>
+                <div style={{marginBottom: "6px", color: "#6B7280"}}>📡 Request Preview</div>
+                <div><span style={{color: "#34D399"}}>POST</span> {`${baseUrl}/clients/${clientId||"•"}/nodes/${nodeId||"•"}/scopes/${scopeId||"•"}/api-data`}</div>
+                <div style={{marginTop: "8px", borderTop: "1px solid #E6E8E3", paddingTop: "8px"}}>
+                  <div style={{color: "#6B7280", marginBottom: "4px"}}>Headers sent with request:</div>
+                  <div><span style={{color: "#F59E0B"}}>Content-Type:</span> application/json</div>
+                  <div><span style={{color: "#F59E0B"}}>X-API-Key:</span> <span style={{color: apiKey ? "#34D399" : "#EF4444"}}>{apiKey ? `${apiKey.substring(0, 8)}${"•".repeat(12)} (key hidden for security)` : "⚠ Not entered yet"}</span></div>
+                </div>
+              </div>
             </div>
 
             <div style={{...styles.flexRow, gap: "20px", paddingBottom: "60px"}}>
