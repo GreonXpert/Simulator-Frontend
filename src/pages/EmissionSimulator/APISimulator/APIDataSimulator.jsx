@@ -26,7 +26,6 @@ const APIDataSimulator = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Simulation Mode state
-  const [simMode, setSimMode] = useState("random");
   const [totalValue, setTotalValue] = useState(1000);
   const [sourcePeriod, setSourcePeriod] = useState("Yearly");
   const [targetFrequency, setTargetFrequency] = useState("Monthly");
@@ -42,10 +41,6 @@ const APIDataSimulator = () => {
   // Date selection
   const [selectedDate, _setSelectedDate] = useState("");
   const [useCustomDate, _setUseCustomDate] = useState(false);
-
-  // Batch
-  const [batchMode, setBatchMode] = useState(false);
-  const [batchSize, setBatchSize] = useState(5);
 
   // ✅ Scope 1+2 Integration state
   const [scope12Data, setScope12Data] = useState(null);
@@ -163,12 +158,10 @@ const APIDataSimulator = () => {
     finally { setScope12Loading(false); }
   };
 
-  const rand = (min, max, decimals = 2) => +(Math.random() * (max - min) + min).toFixed(decimals);
 
   const getFieldValue = (fieldName) => {
-    if (simMode === "controlled") return +distributions.valuePerInterval.toFixed(4);
     if (fieldName === 'BuildingTotalS1_S2' && scope12Data) return scope12Data.scope12TotalCO2e;
-    return rand(1, 48, 2);
+    return +distributions.valuePerInterval.toFixed(4);
   };
 
   const getCurrentFields = () => {
@@ -188,7 +181,7 @@ const APIDataSimulator = () => {
     return {
       dataValues: getCurrentFields().reduce((acc, field) => {
         const idx = overrideIdx !== null ? overrideIdx : sendsCompleted;
-        if (simMode === "controlled" && idx === distributions.totalIntervals - 1) {
+        if (idx === distributions.totalIntervals - 1) {
           const accVal = distributions.valuePerInterval * (distributions.totalIntervals - 1);
           acc[field] = +(totalValue - accVal).toFixed(4);
         } else acc[field] = getFieldValue(field);
@@ -198,15 +191,6 @@ const APIDataSimulator = () => {
       time: now.toLocaleTimeString("en-GB", { hour12: false }),
       timestamp: now.toISOString()
     };
-  };
-
-  const buildBatchPayload = () => {
-    const list = [];
-    const size = simMode === "controlled" ? Math.min(batchSize, distributions.totalIntervals - sendsCompleted) : batchSize;
-    for (let i = 0; i < size; i++) {
-      list.push(buildPayload(simMode === "controlled" ? sendsCompleted + i : null));
-    }
-    return { batchData: list, actualBatchSize: size };
   };
 
   const log = (msg, type = "info") => {
@@ -224,19 +208,18 @@ const APIDataSimulator = () => {
     if (!baseUrl || !clientId || !nodeId || !scopeId) { log("Configuration incomplete — fill all fields", "err"); return; }
     if (!apiKey) { log("❌ API Key is required — enter your DC_API key in Credential Secret", "err"); return; }
     const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/api-data`;
-    if (simMode === "controlled" && sendsCompleted >= distributions.totalIntervals) { log("🎉 Cycle complete", "ok"); stopAuto(); return; }
+    if (sendsCompleted >= distributions.totalIntervals) { log("🎉 Cycle complete", "ok"); stopAuto(); return; }
     const fields = getCurrentFields();
     if (fields.length === 0) { log("Schema required", "err"); return; }
-    const payload = batchMode ? buildBatchPayload() : buildPayload();
+    const payload = buildPayload();
     try {
-      log(`POST → ${batchMode ? 'Batch' : 'Packet'}`, "info");
+      log(`POST → Packet`, "info");
       const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": apiKey }, body: JSON.stringify(payload) });
-      const count = batchMode ? payload.actualBatchSize : 1;
       setLastHttp(res.status);
-      setTotalSent(prev => prev + count);
+      setTotalSent(prev => prev + 1);
       if (res.ok) {
-        setSuccess(prev => prev + count);
-        if (simMode === "controlled") setSendsCompleted(prev => prev + count);
+        setSuccess(prev => prev + 1);
+        setSendsCompleted(prev => prev + 1);
         log(`✓ Multi-vector success`, "ok");
       } else log(`✖ Fail: ${res.status}`, "err");
     } catch { log(`✖ Connection error`, "err"); }
@@ -244,7 +227,7 @@ const APIDataSimulator = () => {
 
   const startAuto = () => {
     if (timerRef.current) return;
-    const ms = (simMode === "controlled" && targetFrequency === "Minutes") 
+    const ms = targetFrequency === "Minutes"
       ? Math.max(1000, parseInt(minuteInterval) * 60 * 1000)
       : Math.max(300, parseInt(intervalMs || 15000, 10));
     setStatus("RUNNING");
@@ -264,11 +247,12 @@ const APIDataSimulator = () => {
 
   const styles = {
     wrap: { width: "100%", minHeight: "100vh", background: "#F4F5F2", color: "#0E1512", fontFamily: "'Inter', sans-serif", padding: isMobile ? "24px 16px" : "40px 60px", boxSizing: "border-box", display: "flex", flexDirection: "column", alignItems: "center" },
-    pageShell: { width: "100%", maxWidth: "1200px" },
+    pageShell: { width: "100%" },
     header: { borderBottom: "1px solid #E6E8E3", paddingBottom: "40px", marginBottom: "40px" },
     brand: { fontSize: "12px", fontWeight: 600, color: "#34D399", textTransform: "uppercase", letterSpacing: "0.15em", marginBottom: "12px" },
     title: { fontSize: isMobile ? "36px" : "56px", fontFamily: "'Instrument Serif', serif", color: "#0E1512", margin: 0, fontWeight: 400, lineHeight: 1.1 },
     italic: { fontStyle: "italic" },
+    gridOuter: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 420px", gap: "32px", alignItems: "start" },
     grid: { display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1fr 340px", gap: "48px", alignItems: "start" },
     card: { background: "#FFFFFF", borderRadius: "16px", border: "1px solid #E6E8E3", padding: isMobile ? "24px" : "32px", marginBottom: "32px", boxShadow: "0 2px 10px rgba(14,21,18,0.02)" },
     sectionHeading: { fontFamily: "'Instrument Serif', serif", fontSize: "24px", marginBottom: "24px", color: "#0E1512", display: "flex", alignItems: "center", gap: "10px" },
@@ -281,7 +265,8 @@ const APIDataSimulator = () => {
     summaryBox: { background: "#E7FBF2", borderRadius: "16px", padding: "24px", marginTop: "12px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px" },
     summaryLabel: { fontSize: "10px", fontWeight: 600, color: "#10B981", textTransform: "uppercase" },
     summaryValue: { fontSize: "20px", fontWeight: 500, color: "#0E1512", fontFamily: "'Instrument Serif', serif" },
-    console: { background: "#FFFFFF", border: "1px solid #E6E8E3", borderRadius: "16px", display: "flex", flexDirection: "column", height: "640px", overflow: "hidden", position: isMobile ? "static" : "sticky", top: "40px" },
+    console: { background: "#FFFFFF", border: "1px solid #E6E8E3", borderRadius: "16px", display: "flex", flexDirection: "column", height: "calc(100vh - 100px)", overflow: "hidden", position: isMobile ? "static" : "sticky", top: "40px" },
+    sidePanelCol: { alignSelf: "stretch" },
     consoleHeader: { padding: "20px", borderBottom: "1px solid #E6E8E3", fontSize: "14px", fontWeight: 600, color: "#0E1512" },
     consoleLog: { flex: 1, padding: "20px", overflow: "auto", fontFamily: "'JetBrains Mono', monospace", fontSize: "11px", lineHeight: 1.6, background: "#F9FAF9" },
     urlPreview: { fontSize: "10px", color: "#6B7280", fontFamily: "'JetBrains Mono', monospace", marginTop: "12px", wordBreak: "break-all", padding: "12px", background: "#F9FAF9", borderRadius: "8px", border: "1px solid #E6E8E3" },
@@ -292,8 +277,8 @@ const APIDataSimulator = () => {
     <div style={styles.wrap}>
       <div style={styles.pageShell}>
         <nav style={{ marginBottom: "32px" }}>
-           <button 
-             onClick={() => navigate("/simulator")}
+           <button
+             onClick={() => navigate("/simulator", { state: { module: "emission" } })}
              style={{
                background: "transparent",
                border: "none",
@@ -307,7 +292,7 @@ const APIDataSimulator = () => {
                padding: 0
              }}
            >
-             ← Back to Simulator Matrix
+             ← Back to Emission
            </button>
         </nav>
         <header style={styles.header}>
@@ -315,18 +300,9 @@ const APIDataSimulator = () => {
             <h1 style={styles.title}>API Vector <span style={styles.italic}>Simulator</span></h1>
         </header>
 
-        <div style={styles.grid}>
+        <div style={styles.gridOuter}>
           <div className="main">
-            <div style={styles.card}>
-               <div style={styles.sectionHeading}>◯ Sync Context</div>
-               <div style={styles.flexRow}>
-                 <button style={{...styles.btnOutline, flex:1, background: simMode==="random"?"#0E1512":"transparent", color: simMode==="random"?"#FFF":"#0E1512"}} onClick={()=>setSimMode("random")}>Randomized Packet</button>
-                 <button style={{...styles.btnOutline, flex:1, background: simMode==="controlled"?"#34D399":"transparent", color: "#0E1512", borderColor: simMode==="controlled"?"#34D399":"#E6E8E3"}} onClick={()=>setSimMode("controlled")}>Linear Distribution</button>
-               </div>
-            </div>
-
-            {simMode === "controlled" && (
-              <div style={{...styles.card, background: "#E7FBF2", border: "none"}}>
+            <div style={{...styles.card, background: "#E7FBF2", border: "none"}}>
                  <div style={styles.sectionHeading}>◜ Distribution Scale</div>
                  <div style={styles.grid}>
                     <div><label style={styles.label}>Pool Total</label><input style={styles.input} type="number" value={totalValue} onChange={e=>setTotalValue(parseFloat(e.target.value))}/></div>
@@ -345,8 +321,7 @@ const APIDataSimulator = () => {
                     <div style={styles.summaryItem}><span style={styles.summaryLabel}>Completion</span><span style={styles.summaryValue}>{sendsCompleted} / {distributions.totalIntervals}</span></div>
                  </div>
                  {sendsCompleted > 0 && <button style={{...styles.btnBlack, width: "100%", marginTop: "16px"}} onClick={resetControlled}>Reset Distribution</button>}
-              </div>
-            )}
+            </div>
 
             <div style={styles.card}>
                 <div style={styles.sectionHeading}>◞ Vector Schema</div>
@@ -359,15 +334,6 @@ const APIDataSimulator = () => {
                    <div><label style={styles.label}>Methodology Tier</label><select style={styles.select} value={selectedTier} onChange={e=>setSelectedTier(e.target.value)}>{getAvailableTiers().map(t=><option key={t} value={t}>{t.toUpperCase()}</option>)}</select></div>
                 </div>
                 {getCurrentFields().length>0 && <div style={{...styles.urlPreview, background: "#FFFFFF", color: "#34D399", fontWeight: 600}}>Active: {getCurrentFields().join(' · ')}</div>}
-            </div>
-
-            <div style={styles.card}>
-               <div style={styles.sectionHeading}>📦 Transmission Logic</div>
-               <div style={styles.flexRow}>
-                 <button style={{...styles.btnOutline, flex:1, background: !batchMode?"#0E1512":"transparent", color: !batchMode?"#FFF":"#0E1512"}} onClick={()=>setBatchMode(false)}>Standard Packet</button>
-                 <button style={{...styles.btnOutline, flex:1, background: batchMode?"#34D399":"transparent", color: "#0E1512", borderColor: batchMode?"#34D399":"#E6E8E3"}} onClick={()=>setBatchMode(true)}>Batch Matrix</button>
-               </div>
-               {batchMode && <div style={{marginTop: "20px"}}><label style={styles.label}>Vector Count per Block</label><input style={styles.input} type="number" value={batchSize} onChange={e=>setBatchSize(parseInt(e.target.value))}/></div>}
             </div>
 
             <div style={styles.card}>
@@ -400,7 +366,7 @@ const APIDataSimulator = () => {
             </div>
           </div>
 
-          <div className="side">
+          <div className="side" style={styles.sidePanelCol}>
              <div style={styles.console}>
                 <div style={styles.consoleHeader}>Active Data Matrix</div>
                 <div style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", borderBottom: "1px solid #E6E8E3" }}>

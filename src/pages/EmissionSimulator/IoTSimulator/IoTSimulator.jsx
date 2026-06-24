@@ -26,7 +26,6 @@ const IoTDataSimulator = () => {
   const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   // Simulation Mode state
-  const [simMode, setSimMode] = useState("random"); 
   const [totalValue, setTotalValue] = useState(1000);
   const [sourcePeriod, setSourcePeriod] = useState("Yearly");
   const [targetFrequency, setTargetFrequency] = useState("Monthly");
@@ -188,15 +187,10 @@ const IoTDataSimulator = () => {
     } finally { setScope12Loading(false); }
   };
 
-  const rand = (min, max, decimals = 2) => {
-    const value = Math.random() * (max - min) + min;
-    return +value.toFixed(decimals);
-  };
 
   const getFieldValue = (fieldName) => {
-    if (simMode === "controlled") return +distributions.valuePerInterval.toFixed(4);
     if (fieldName === 'BuildingTotalS1_S2' && scope12Data) return scope12Data.scope12TotalCO2e;
-    return rand(1, 48, 2);
+    return +distributions.valuePerInterval.toFixed(4);
   };
 
   const getCurrentFields = () => {
@@ -215,7 +209,7 @@ const IoTDataSimulator = () => {
     return {
       dataValues: getCurrentFields().reduce((acc, field) => {
         const isLast = sendsCompleted === distributions.totalIntervals - 1;
-        if (simMode === "controlled" && isLast) {
+        if (isLast) {
           const accumulated = distributions.valuePerInterval * (distributions.totalIntervals - 1);
           acc[field] = +(totalValue - accumulated).toFixed(4);
         } else {
@@ -248,7 +242,7 @@ const IoTDataSimulator = () => {
     }
     if (!apiKey) { log("❌ API Key is required — enter your DC_IOT key in API Credential", "err"); return; }
     const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/iot-data`;
-    if (simMode === "controlled" && sendsCompleted >= distributions.totalIntervals) {
+    if (sendsCompleted >= distributions.totalIntervals) {
       log("🎉 Cycle completed", "ok");
       stopAuto();
       return;
@@ -266,7 +260,7 @@ const IoTDataSimulator = () => {
       setTotalSent(prev => prev + 1);
       if (res.ok) {
         setSuccess(prev => prev + 1);
-        if (simMode === "controlled") setSendsCompleted(prev => prev + 1);
+        setSendsCompleted(prev => prev + 1);
         log(`✓ Transmission Success`, "ok");
       } else { log(`✖ ${res.status}`, "err"); }
     } catch { setLastHttp("ERR"); log(`✖ Network Fail`, "err"); }
@@ -274,7 +268,7 @@ const IoTDataSimulator = () => {
 
   const startAuto = () => {
     if (timerRef.current) return;
-    const ms = (simMode === "controlled" && targetFrequency === "Minutes") 
+    const ms = targetFrequency === "Minutes"
       ? Math.max(1000, parseInt(minuteInterval) * 60 * 1000)
       : Math.max(300, parseInt(intervalMs || 5000, 10));
     setStatus("RUNNING");
@@ -320,7 +314,6 @@ const IoTDataSimulator = () => {
     },
     pageShell: {
       width: "100%",
-      maxWidth: "1200px",
     },
     header: {
       borderBottom: "1px solid #E6E8E3",
@@ -344,12 +337,19 @@ const IoTDataSimulator = () => {
       lineHeight: 1.1
     },
     italic: { fontStyle: "italic" },
+    gridOuter: {
+      display: "grid",
+      gridTemplateColumns: isMobile ? "1fr" : "1fr 420px",
+      gap: "32px",
+      alignItems: "start"
+    },
     grid: {
       display: "grid",
       gridTemplateColumns: isMobile ? "1fr" : "1fr 340px",
       gap: "48px",
       alignItems: "start"
     },
+    sidePanelCol: { alignSelf: "stretch" },
     card: {
       background: "#FFFFFF",
       borderRadius: "16px",
@@ -454,7 +454,7 @@ const IoTDataSimulator = () => {
       borderRadius: "16px",
       display: "flex",
       flexDirection: "column",
-      height: "640px",
+      height: "calc(100vh - 100px)",
       overflow: "hidden",
       position: isMobile ? "static" : "sticky",
       top: "40px"
@@ -498,8 +498,8 @@ const IoTDataSimulator = () => {
     <div style={styles.wrap}>
       <div style={styles.pageShell}>
         <nav style={{ marginBottom: "32px" }}>
-           <button 
-             onClick={() => navigate("/simulator")}
+           <button
+             onClick={() => navigate("/simulator", { state: { module: "emission" } })}
              style={{
                background: "transparent",
                border: "none",
@@ -513,7 +513,7 @@ const IoTDataSimulator = () => {
                padding: 0
              }}
            >
-             ← Back to Simulator Matrix
+             ← Back to Emission
            </button>
         </nav>
         <header style={styles.header}>
@@ -523,30 +523,10 @@ const IoTDataSimulator = () => {
           </h1>
         </header>
 
-        <div style={styles.grid}>
+        <div style={styles.gridOuter}>
           <div className="mainControl">
-            {/* Engine Modes */}
-            <div style={styles.card}>
-              <div style={styles.sectionHeading}>◯ Calibration Mode</div>
-              <div style={styles.flexRow}>
-                <button 
-                  style={{...styles.btnOutline, flex: 1, background: simMode === "random" ? "#0E1512" : "transparent", color: simMode === "random" ? "#FFF" : "#0E1512"}}
-                  onClick={() => setSimMode("random")}
-                >
-                  Stochastic Random
-                </button>
-                <button 
-                  style={{...styles.btnOutline, flex: 1, background: simMode === "controlled" ? "#34D399" : "transparent", borderColor: simMode === "controlled" ? "#34D399" : "#E6E8E3"}}
-                  onClick={() => setSimMode("controlled")}
-                >
-                  Linear Distribution
-                </button>
-              </div>
-            </div>
-
             {/* Distribution Controls */}
-            {simMode === "controlled" && (
-              <div style={{...styles.card, background: "#E7FBF2", border: "none"}}>
+            <div style={{...styles.card, background: "#E7FBF2", border: "none"}}>
                 <div style={styles.sectionHeading}>◜ Parameter Allocation</div>
                 <div style={styles.grid}>
                    <div>
@@ -591,8 +571,7 @@ const IoTDataSimulator = () => {
                    </div>
                 </div>
                 {sendsCompleted > 0 && <button style={{...styles.btnBlack, width: "100%", marginTop: "16px"}} onClick={resetControlled}>Reset Cycle</button>}
-              </div>
-            )}
+            </div>
 
             {/* Selection */}
             <div style={styles.card}>
@@ -703,7 +682,7 @@ const IoTDataSimulator = () => {
           </div>
 
           {/* Console */}
-          <div className="sidePanel">
+          <div className="sidePanel" style={styles.sidePanelCol}>
              <div style={styles.console}>
                 <div style={styles.consoleHeader}>Active Activity Log</div>
                 <div style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", borderBottom: "1px solid #E6E8E3" }}>

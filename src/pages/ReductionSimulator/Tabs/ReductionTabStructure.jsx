@@ -104,7 +104,7 @@ const ReductionTabStructure = () => {
     icon: { fontSize: 16 },
     label: { fontWeight: 800, letterSpacing: 0.3, fontSize: 14 },
     content: {
-      width: "min(1200px, 96vw)",
+      width: "100%",
       margin: "0 auto",
       borderRadius: 18,
       border: "1px solid rgba(255,255,255,.06)",
