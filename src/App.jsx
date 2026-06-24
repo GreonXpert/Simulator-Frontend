@@ -4,6 +4,8 @@ import TabStructureSimulator from "./pages/EmissionSimulator/Tabs/TabStructureSi
 import IoTDataSimulator from "./pages/EmissionSimulator/IoTSimulator/IoTSimulator";
 import APIDataSimulator from "./pages/EmissionSimulator/APISimulator/APIDataSimulator";
 import ReductionTabStructure from "./pages/ReductionSimulator/Tabs/ReductionTabStructure";
+import ReductionIoTSimulator from "./pages/ReductionSimulator/IoTSimulator/ReductionIoTSimulator";
+import ReductionAPISimulator from "./pages/ReductionSimulator/APISimulator/ReductionAPISimulator";
 
 
 function App() {
@@ -21,8 +23,10 @@ function App() {
         <Route path="/simulator/emission/iot" element={<IoTDataSimulator />} />
         <Route path="/simulator/emission/api" element={<APIDataSimulator />} />
 
-        {/* Reduction module */}
+        {/* Reduction modules */}
         <Route path="/simulator/reduction" element={<ReductionTabStructure />} />
+        <Route path="/simulator/reduction/iot" element={<ReductionIoTSimulator />} />
+        <Route path="/simulator/reduction/api" element={<ReductionAPISimulator />} />
       </Routes>
     </BrowserRouter>
   );
