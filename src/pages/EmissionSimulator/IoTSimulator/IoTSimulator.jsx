@@ -5,19 +5,22 @@ const IoTDataSimulator = () => {
   const navigate = useNavigate();
   // Inject Google Fonts
   useEffect(() => {
-    const link = document.createElement('link');
-    link.href = 'https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap';
-    link.rel = 'stylesheet';
+    const link = document.createElement("link");
+    link.href =
+      "https://fonts.googleapis.com/css2?family=Instrument+Serif:ital,wght@0,400;1,400&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap";
+    link.rel = "stylesheet";
     document.head.appendChild(link);
   }, []);
 
   // State variables - ✅ Refactored Endpoint State
-  const [baseUrl, setBaseUrl] = useState("http://localhost:5000/api/data-collection");
+  const [baseUrl, setBaseUrl] = useState(
+    "http://localhost:5000/api/data-collection",
+  );
   const [clientId, setClientId] = useState("");
   const [nodeId, setNodeId] = useState("");
   const [scopeId, setScopeId] = useState("");
   const [apiKey, setApiKey] = useState("");
-  
+
   const [intervalMs, setIntervalMs] = useState(5000);
   const [status, setStatus] = useState("STOPPED");
   const [totalSent, setTotalSent] = useState(0);
@@ -47,21 +50,22 @@ const IoTDataSimulator = () => {
   // Calculation Logic for controlled distribution
   const distributions = React.useMemo(() => {
     const durations = {
-      "Monthly": 30 * 24 * 60,
-      "Quarterly": 91.25 * 24 * 60,
+      Monthly: 30 * 24 * 60,
+      Quarterly: 91.25 * 24 * 60,
       "Half-yearly": 182.5 * 24 * 60,
-      "Yearly": 365 * 24 * 60
+      Yearly: 365 * 24 * 60,
     };
 
     const targetDurations = {
-      "Monthly": 30 * 24 * 60,
-      "Daily": 24 * 60,
-      "Hourly": 60,
-      "Minutes": parseInt(minuteInterval) || 1
+      Monthly: 30 * 24 * 60,
+      Daily: 24 * 60,
+      Hourly: 60,
+      Minutes: parseInt(minuteInterval) || 1,
     };
 
     const sourceMins = durations[sourcePeriod] || durations["Yearly"];
-    const targetMins = targetDurations[targetFrequency] || targetDurations["Monthly"];
+    const targetMins =
+      targetDurations[targetFrequency] || targetDurations["Monthly"];
     const totalIntervals = Math.max(1, Math.floor(sourceMins / targetMins));
     const valuePerInterval = totalValue / totalIntervals;
 
@@ -75,77 +79,249 @@ const IoTDataSimulator = () => {
   // ✅ FULLY CORRECTED configuration data
   const scopeConfig = {
     "Scope 1": {
-      "Combustion": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["fuelConsumption"], "tier 2": ["fuelConsumption"] } },
-      "Fugitive": {
+      Combustion: {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["fuelConsumption"],
+          "tier 2": ["fuelConsumption"],
+        },
+      },
+      Fugitive: {
         activities: ["SF6", "CH4-Leaks", "Refrigeration", "Generic"],
         tiers: ["tier 1", "tier 2"],
         fields: {
-          SF6: { "tier 1": ["nameplateCapacity"], "tier 2": ["decreaseInventory", "acquisitions", "disbursements", "netCapacityIncrease"] },
-          "CH4-Leaks": { "tier 1": ["activityData"], "tier 2": ["numberOfComponents"] },
-          Refrigeration: { "tier 1": ["numberOfUnits"], "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"] },
-          Generic: { "tier 1": ["numberOfUnits"], "tier 2": ["installedCapacity", "endYearCapacity", "purchases", "disposals"] }
-        }
+          SF6: {
+            "tier 1": ["nameplateCapacity"],
+            "tier 2": [
+              "decreaseInventory",
+              "acquisitions",
+              "disbursements",
+              "netCapacityIncrease",
+            ],
+          },
+          "CH4-Leaks": {
+            "tier 1": ["activityData"],
+            "tier 2": ["numberOfComponents"],
+          },
+          Refrigeration: {
+            "tier 1": ["numberOfUnits"],
+            "tier 2": [
+              "installedCapacity",
+              "endYearCapacity",
+              "purchases",
+              "disposals",
+            ],
+          },
+          Generic: {
+            "tier 1": ["numberOfUnits"],
+            "tier 2": [
+              "installedCapacity",
+              "endYearCapacity",
+              "purchases",
+              "disposals",
+            ],
+          },
+        },
       },
-      "Process Emission": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["productionOutput"], "tier 2": ["rawMaterialInput"] } }
+      "Process Emission": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["productionOutput"],
+          "tier 2": ["rawMaterialInput"],
+        },
+      },
     },
     "Scope 2": {
-      "Purchased Electricity": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["consumed_electricity"], "tier 2": ["consumed_electricity"] } },
-      "Purchased Steam": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["consumed_steam"], "tier 2": ["consumed_steam"] } },
-      "Purchased Heating": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["consumed_heating"], "tier 2": ["consumed_heating"] } },
-      "Purchased Cooling": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["consumed_cooling"], "tier 2": ["consumed_cooling"] } }
+      "Purchased Electricity": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["consumed_electricity"],
+          "tier 2": ["consumed_electricity"],
+        },
+      },
+      "Purchased Steam": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: { "tier 1": ["consumed_steam"], "tier 2": ["consumed_steam"] },
+      },
+      "Purchased Heating": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["consumed_heating"],
+          "tier 2": ["consumed_heating"],
+        },
+      },
+      "Purchased Cooling": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["consumed_cooling"],
+          "tier 2": ["consumed_cooling"],
+        },
+      },
     },
     "Scope 3": {
-      "Purchased Goods and Services": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["procurementSpend"], "tier 2": ["physicalQuantity"] } },
-      "Capital Goods": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["procurementSpend"], "tier 2": ["assetQuantity"] } },
+      "Purchased Goods and Services": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["procurementSpend"],
+          "tier 2": ["physicalQuantity"],
+        },
+      },
+      "Capital Goods": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: { "tier 1": ["procurementSpend"], "tier 2": ["assetQuantity"] },
+      },
       "Fuel and energy": {
         activities: ["Upstream fuel", "WTT", "T&D losses"],
         tiers: ["tier 1", "tier 2"],
-        fields: { "Upstream fuel": { "tier 1": ["fuelConsumed"], "tier 2": ["fuelConsumed"] }, "WTT": { "tier 1": ["consumed_fuel"], "tier 2": ["consumed_fuel"] }, "T&D losses": { "tier 1": ["electricityConsumption"], "tier 2": ["electricityConsumption"] } }
+        fields: {
+          "Upstream fuel": {
+            "tier 1": ["fuelConsumed"],
+            "tier 2": ["fuelConsumed"],
+          },
+          WTT: { "tier 1": ["consumed_fuel"], "tier 2": ["consumed_fuel"] },
+          "T&D losses": {
+            "tier 1": ["electricityConsumption"],
+            "tier 2": ["electricityConsumption"],
+          },
+        },
       },
-      "Upstream Transport and Distribution": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["transportationSpend"], "tier 2": ["allocation", "distance"] } },
-      "Waste Generated in Operation": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["wasteMass"], "tier 2": ["wasteMass"] } },
+      "Upstream Transport and Distribution": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["transportationSpend"],
+          "tier 2": ["allocation", "distance"],
+        },
+      },
+      "Waste Generated in Operation": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: { "tier 1": ["wasteMass"], "tier 2": ["wasteMass"] },
+      },
       "Business Travel": {
         activities: ["travelbased", "hotelbased"],
         tiers: ["tier 1", "tier 2"],
-        fields: { travelbased: { "tier 1": ["travelSpend"], "tier 2": ["numberOfPassengers", "distanceTravelled"] }, hotelbased: { "tier 1": ["hotelNights"], "tier 2": ["hotelNights"] } }
+        fields: {
+          travelbased: {
+            "tier 1": ["travelSpend"],
+            "tier 2": ["numberOfPassengers", "distanceTravelled"],
+          },
+          hotelbased: { "tier 1": ["hotelNights"], "tier 2": ["hotelNights"] },
+        },
       },
-      "Employee Commuting": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["employeeCount", "averageCommuteDistance", "workingDays"], "tier 2": ["employeeCount", "averageCommuteDistance", "workingDays"] } },
+      "Employee Commuting": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["employeeCount", "averageCommuteDistance", "workingDays"],
+          "tier 2": ["employeeCount", "averageCommuteDistance", "workingDays"],
+        },
+      },
       "Upstream Leased Assets": {
         activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
-        fields: { energybased: { "tier 1": ["leasedArea"], "tier 2": ["energyConsumption"] }, areabased: { "tier 1": ["leasedArea"], "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"] } }
+        fields: {
+          energybased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["energyConsumption"],
+          },
+          areabased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"],
+          },
+        },
       },
       "Downstream Leased Assets": {
         activities: ["energybased", "areabased"],
         tiers: ["tier 1", "tier 2"],
-        fields: { energybased: { "tier 1": ["leasedArea"], "tier 2": ["energyConsumption"] }, areabased: { "tier 1": ["leasedArea"], "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"] } }
+        fields: {
+          energybased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["energyConsumption"],
+          },
+          areabased: {
+            "tier 1": ["leasedArea"],
+            "tier 2": ["leasedArea", "totalArea", "BuildingTotalS1_S2"],
+          },
+        },
       },
-      "Downstream Transport and Distribution": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["transportSpend"], "tier 2": ["allocation", "distance"] } },
-      "Processing of Sold Products": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["productQuantity"], "tier 2": ["productQuantity"] } },
-      "Use of Sold Products": { activities: [], tiers: ["tier 1", "tier 2"], fields: { "tier 1": ["productQuantity"], "tier 2": ["productQuantity"] } },
+      "Downstream Transport and Distribution": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["transportSpend"],
+          "tier 2": ["allocation", "distance"],
+        },
+      },
+      "Processing of Sold Products": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["productQuantity"],
+          "tier 2": ["productQuantity"],
+        },
+      },
+      "Use of Sold Products": {
+        activities: [],
+        tiers: ["tier 1", "tier 2"],
+        fields: {
+          "tier 1": ["productQuantity"],
+          "tier 2": ["productQuantity"],
+        },
+      },
       "End-of-Life Treatment of Sold Products": {
         activities: ["Disposal", "Landfill", "Incineration"],
         tiers: ["tier 1", "tier 2"],
-        fields: { "Disposal": { "tier 1": ["massEol"], "tier 2": ["massEol"] }, "Landfill": { "tier 1": ["massEol"], "tier 2": ["massEol"] }, "Incineration": { "tier 1": ["massEol"], "tier 2": ["massEol"] } }
+        fields: {
+          Disposal: { "tier 1": ["massEol"], "tier 2": ["massEol"] },
+          Landfill: { "tier 1": ["massEol"], "tier 2": ["massEol"] },
+          Incineration: { "tier 1": ["massEol"], "tier 2": ["massEol"] },
+        },
       },
-      "Franchises": {
+      Franchises: {
         activities: ["emissionbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
-        fields: { emissionbased: { "tier 1": ["franchiseCount", "avgEmissionPerFranchise"], "tier 2": ["franchiseTotalS1Emission", "franchiseTotalS2Emission"] }, energybased: { "tier 1": ["franchiseCount", "avgEmissionPerFranchise"], "tier 2": ["energyConsumption"] } }
+        fields: {
+          emissionbased: {
+            "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
+            "tier 2": ["franchiseTotalS1Emission", "franchiseTotalS2Emission"],
+          },
+          energybased: {
+            "tier 1": ["franchiseCount", "avgEmissionPerFranchise"],
+            "tier 2": ["energyConsumption"],
+          },
+        },
       },
-      "Investments": {
+      Investments: {
         activities: ["investmentbased", "energybased"],
         tiers: ["tier 1", "tier 2"],
-        fields: { investmentbased: { "tier 1": ["investeeRevenue"], "tier 2": ["investeeScope1Emission", "investeeScope2Emission"] }, energybased: { "tier 1": ["investeeRevenue"], "tier 2": ["energyConsumption"] } }
-      }
-    }
+        fields: {
+          investmentbased: {
+            "tier 1": ["investeeRevenue"],
+            "tier 2": ["investeeScope1Emission", "investeeScope2Emission"],
+          },
+          energybased: {
+            "tier 1": ["investeeRevenue"],
+            "tier 2": ["energyConsumption"],
+          },
+        },
+      },
+    },
   };
 
   // Lifecycle updates
   useEffect(() => {
     const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -159,37 +335,46 @@ const IoTDataSimulator = () => {
 
   const requiresScope12Data = () => {
     const fields = getCurrentFields();
-    return fields.includes('BuildingTotalS1_S2');
+    return fields.includes("BuildingTotalS1_S2");
   };
 
   const fetchScope12Total = async () => {
     if (!clientId) {
-      setScope12Error('Client ID required');
-      log('❌ Client ID is required for baseline sync', 'err');
+      setScope12Error("Client ID required");
+      log("❌ Client ID is required for baseline sync", "err");
       return;
     }
     setScope12Loading(true);
     setScope12Error(null);
-    log(`🔄 Fetching baseline sync for: ${clientId}`, 'info');
+    log(`🔄 Fetching baseline sync for: ${clientId}`, "info");
     try {
       const fetchUrl = `${baseUrl}/clients/${encodeURIComponent(clientId)}/scope12-total`;
-      const response = await fetch(fetchUrl, { method: 'GET', headers: { 'Content-Type': 'application/json' } });
+      const response = await fetch(fetchUrl, {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
       const result = await response.json();
-      if (!response.ok) throw new Error(result.message || `HTTP ${response.status}`);
+      if (!response.ok)
+        throw new Error(result.message || `HTTP ${response.status}`);
       if (result.success && result.data) {
         setScope12Data(result.data);
         setScope12LastFetch(new Date());
-        log(`✅ Baseline Synchronized: ${result.data.scope12TotalCO2e} tCO₂e`, 'ok');
-      } else throw new Error('Invalid response');
+        log(
+          `✅ Baseline Synchronized: ${result.data.scope12TotalCO2e} tCO₂e`,
+          "ok",
+        );
+      } else throw new Error("Invalid response");
     } catch (error) {
       setScope12Error(error.message);
-      log(`❌ Sync failed: ${error.message}`, 'err');
-    } finally { setScope12Loading(false); }
+      log(`❌ Sync failed: ${error.message}`, "err");
+    } finally {
+      setScope12Loading(false);
+    }
   };
 
-
   const getFieldValue = (fieldName) => {
-    if (fieldName === 'BuildingTotalS1_S2' && scope12Data) return scope12Data.scope12TotalCO2e;
+    if (fieldName === "BuildingTotalS1_S2" && scope12Data)
+      return scope12Data.scope12TotalCO2e;
     return +distributions.valuePerInterval.toFixed(4);
   };
 
@@ -210,7 +395,8 @@ const IoTDataSimulator = () => {
       dataValues: getCurrentFields().reduce((acc, field) => {
         const isLast = sendsCompleted === distributions.totalIntervals - 1;
         if (isLast) {
-          const accumulated = distributions.valuePerInterval * (distributions.totalIntervals - 1);
+          const accumulated =
+            distributions.valuePerInterval * (distributions.totalIntervals - 1);
           acc[field] = +(totalValue - accumulated).toFixed(4);
         } else {
           acc[field] = getFieldValue(field);
@@ -219,7 +405,7 @@ const IoTDataSimulator = () => {
       }, {}),
       date: now.toLocaleDateString("en-GB"),
       time: now.toLocaleTimeString("en-GB", { hour12: false }),
-      timestamp: now.toISOString()
+      timestamp: now.toISOString(),
     };
   };
 
@@ -229,48 +415,81 @@ const IoTDataSimulator = () => {
     const line = document.createElement("div");
     line.style.borderBottom = "1px solid #E6E8E3";
     line.style.padding = "4px 0";
-    line.style.color = type === "ok" ? "#10B981" : type === "err" ? "#EF4444" : type === "warn" ? "#F59E0B" : "#0E1512";
+    line.style.color =
+      type === "ok"
+        ? "#10B981"
+        : type === "err"
+          ? "#EF4444"
+          : type === "warn"
+            ? "#F59E0B"
+            : "#0E1512";
     line.textContent = `[${t}] ${msg}`;
     logRef.current.prepend(line);
-    while (logRef.current.childNodes.length > 500) logRef.current.removeChild(logRef.current.lastChild);
+    while (logRef.current.childNodes.length > 500)
+      logRef.current.removeChild(logRef.current.lastChild);
   };
 
   const sendOnce = async () => {
     if (!baseUrl || !clientId || !nodeId || !scopeId) {
-       log("Missing configuration fields — fill all fields", "err");
-       return;
+      log("Missing configuration fields — fill all fields", "err");
+      return;
     }
-    if (!apiKey) { log("❌ API Key is required — enter your DC_IOT key in API Credential", "err"); return; }
+    if (!apiKey) {
+      log(
+        "❌ API Key is required — enter your DC_IOT key in API Credential",
+        "err",
+      );
+      return;
+    }
     const url = `${baseUrl}/clients/${clientId}/nodes/${nodeId}/scopes/${scopeId}/iot-data`;
     if (sendsCompleted >= distributions.totalIntervals) {
       log("🎉 Cycle completed", "ok");
       stopAuto();
       return;
     }
-    if (!selectedScope || !selectedCategory) { log("Selection incomplete", "err"); return; }
+    if (!selectedScope || !selectedCategory) {
+      log("Selection incomplete", "err");
+      return;
+    }
     const fields = getCurrentFields();
-    if (fields.length === 0) { log("No schema defined", "err"); return; }
-    if (fields.includes('BuildingTotalS1_S2') && !scope12Data) { log("Baseline sync required", "warn"); return; }
-    
+    if (fields.length === 0) {
+      log("No schema defined", "err");
+      return;
+    }
+    if (fields.includes("BuildingTotalS1_S2") && !scope12Data) {
+      log("Baseline sync required", "warn");
+      return;
+    }
+
     const payload = buildPayload();
     try {
-      log(`POST → ${url.split('/').pop()}`, "info");
-      const res = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json", "X-API-Key": apiKey }, body: JSON.stringify(payload) });
+      log(`POST → ${url.split("/").pop()}`, "info");
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "X-API-Key": apiKey },
+        body: JSON.stringify(payload),
+      });
       setLastHttp(res.status);
-      setTotalSent(prev => prev + 1);
+      setTotalSent((prev) => prev + 1);
       if (res.ok) {
-        setSuccess(prev => prev + 1);
-        setSendsCompleted(prev => prev + 1);
+        setSuccess((prev) => prev + 1);
+        setSendsCompleted((prev) => prev + 1);
         log(`✓ Transmission Success`, "ok");
-      } else { log(`✖ ${res.status}`, "err"); }
-    } catch { setLastHttp("ERR"); log(`✖ Network Fail`, "err"); }
+      } else {
+        log(`✖ ${res.status}`, "err");
+      }
+    } catch {
+      setLastHttp("ERR");
+      log(`✖ Network Fail`, "err");
+    }
   };
 
   const startAuto = () => {
     if (timerRef.current) return;
-    const ms = targetFrequency === "Minutes"
-      ? Math.max(1000, parseInt(minuteInterval) * 60 * 1000)
-      : Math.max(300, parseInt(intervalMs || 5000, 10));
+    const ms =
+      targetFrequency === "Minutes"
+        ? Math.max(1000, parseInt(minuteInterval) * 60 * 1000)
+        : Math.max(300, parseInt(intervalMs || 5000, 10));
     setStatus("RUNNING");
     log(`Broadcaster launched @ ${ms}ms`, "ok");
     timerRef.current = setInterval(sendOnce, ms);
@@ -284,15 +503,23 @@ const IoTDataSimulator = () => {
     log("Broadcaster terminated", "warn");
   };
 
-  const resetControlled = () => { setSendsCompleted(0); log("Cycle reset", "info"); };
-  const clearLog = () => { if (logRef.current) logRef.current.innerHTML = ""; };
+  const resetControlled = () => {
+    setSendsCompleted(0);
+    log("Cycle reset", "info");
+  };
+  const clearLog = () => {
+    if (logRef.current) logRef.current.innerHTML = "";
+  };
 
   // Breakpoints
   const isMobile = windowWidth <= 768;
 
-  const getAvailableCategories = () => Object.keys(scopeConfig[selectedScope] || {});
-  const getAvailableActivities = () => scopeConfig[selectedScope]?.[selectedCategory]?.activities || [];
-  const getAvailableTiers = () => scopeConfig[selectedScope]?.[selectedCategory]?.tiers || [];
+  const getAvailableCategories = () =>
+    Object.keys(scopeConfig[selectedScope] || {});
+  const getAvailableActivities = () =>
+    scopeConfig[selectedScope]?.[selectedCategory]?.activities || [];
+  const getAvailableTiers = () =>
+    scopeConfig[selectedScope]?.[selectedCategory]?.tiers || [];
   const hasActivityField = () => {
     const config = scopeConfig[selectedScope]?.[selectedCategory];
     return config?.activities && config.activities.length > 0;
@@ -310,7 +537,7 @@ const IoTDataSimulator = () => {
       boxSizing: "border-box",
       display: "flex",
       flexDirection: "column",
-      alignItems: "center"
+      alignItems: "center",
     },
     pageShell: {
       width: "100%",
@@ -318,7 +545,7 @@ const IoTDataSimulator = () => {
     header: {
       borderBottom: "1px solid #E6E8E3",
       paddingBottom: "40px",
-      marginBottom: "40px"
+      marginBottom: "40px",
     },
     brand: {
       fontSize: "12px",
@@ -326,7 +553,7 @@ const IoTDataSimulator = () => {
       color: "#34D399",
       textTransform: "uppercase",
       letterSpacing: "0.15em",
-      marginBottom: "12px"
+      marginBottom: "12px",
     },
     title: {
       fontSize: isMobile ? "36px" : "56px",
@@ -334,20 +561,20 @@ const IoTDataSimulator = () => {
       color: "#0E1512",
       margin: 0,
       fontWeight: 400,
-      lineHeight: 1.1
+      lineHeight: 1.1,
     },
     italic: { fontStyle: "italic" },
     gridOuter: {
       display: "grid",
       gridTemplateColumns: isMobile ? "1fr" : "1fr 420px",
       gap: "32px",
-      alignItems: "start"
+      alignItems: "start",
     },
     grid: {
       display: "grid",
       gridTemplateColumns: isMobile ? "1fr" : "1fr 340px",
       gap: "48px",
-      alignItems: "start"
+      alignItems: "start",
     },
     sidePanelCol: { alignSelf: "stretch" },
     card: {
@@ -356,7 +583,7 @@ const IoTDataSimulator = () => {
       border: "1px solid #E6E8E3",
       padding: isMobile ? "24px" : "32px",
       marginBottom: "32px",
-      boxShadow: "0 2px 10px rgba(14,21,18,0.02)"
+      boxShadow: "0 2px 10px rgba(14,21,18,0.02)",
     },
     sectionHeading: {
       fontFamily: "'Instrument Serif', serif",
@@ -365,7 +592,7 @@ const IoTDataSimulator = () => {
       color: "#0E1512",
       display: "flex",
       alignItems: "center",
-      gap: "10px"
+      gap: "10px",
     },
     label: {
       fontSize: "11px",
@@ -373,7 +600,7 @@ const IoTDataSimulator = () => {
       color: "#6B7280",
       textTransform: "uppercase",
       marginBottom: "8px",
-      display: "block"
+      display: "block",
     },
     input: {
       width: "100%",
@@ -387,7 +614,7 @@ const IoTDataSimulator = () => {
       outline: "none",
       boxSizing: "border-box",
       marginBottom: "20px",
-      transition: "border-color 0.2s"
+      transition: "border-color 0.2s",
     },
     select: {
       width: "100%",
@@ -399,7 +626,7 @@ const IoTDataSimulator = () => {
       fontFamily: "'Inter', sans-serif",
       color: "#0E1512",
       cursor: "pointer",
-      marginBottom: "20px"
+      marginBottom: "20px",
     },
     btnBlack: {
       background: "#0E1512",
@@ -410,7 +637,7 @@ const IoTDataSimulator = () => {
       fontWeight: 600,
       border: "none",
       cursor: "pointer",
-      transition: "transform 0.1s"
+      transition: "transform 0.1s",
     },
     btnMint: {
       background: "#34D399",
@@ -420,7 +647,7 @@ const IoTDataSimulator = () => {
       fontSize: "13px",
       fontWeight: 600,
       border: "none",
-      cursor: "pointer"
+      cursor: "pointer",
     },
     btnOutline: {
       background: "transparent",
@@ -430,7 +657,7 @@ const IoTDataSimulator = () => {
       fontSize: "13px",
       fontWeight: 600,
       color: "#0E1512",
-      cursor: "pointer"
+      cursor: "pointer",
     },
     summaryBox: {
       background: "#E7FBF2",
@@ -439,15 +666,25 @@ const IoTDataSimulator = () => {
       marginTop: "12px",
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
-      gap: "24px"
+      gap: "24px",
     },
     summaryItem: {
       display: "flex",
       flexDirection: "column",
-      gap: "4px"
+      gap: "4px",
     },
-    summaryLabel: { fontSize: "10px", fontWeight: 600, color: "#10B981", textTransform: "uppercase" },
-    summaryValue: { fontSize: "20px", fontWeight: 500, color: "#0E1512", fontFamily: "'Instrument Serif', serif" },
+    summaryLabel: {
+      fontSize: "10px",
+      fontWeight: 600,
+      color: "#10B981",
+      textTransform: "uppercase",
+    },
+    summaryValue: {
+      fontSize: "20px",
+      fontWeight: 500,
+      color: "#0E1512",
+      fontFamily: "'Instrument Serif', serif",
+    },
     console: {
       background: "#FFFFFF",
       border: "1px solid #E6E8E3",
@@ -457,14 +694,14 @@ const IoTDataSimulator = () => {
       height: "calc(100vh - 100px)",
       overflow: "hidden",
       position: isMobile ? "static" : "sticky",
-      top: "40px"
+      top: "40px",
     },
     consoleHeader: {
       padding: "20px",
       borderBottom: "1px solid #E6E8E3",
       fontSize: "14px",
       fontWeight: 600,
-      color: "#0E1512"
+      color: "#0E1512",
     },
     consoleLog: {
       flex: 1,
@@ -473,7 +710,7 @@ const IoTDataSimulator = () => {
       fontFamily: "'JetBrains Mono', monospace",
       fontSize: "11px",
       lineHeight: 1.6,
-      background: "#F9FAF9"
+      background: "#F9FAF9",
     },
     urlPreview: {
       fontSize: "10px",
@@ -484,37 +721,39 @@ const IoTDataSimulator = () => {
       padding: "12px",
       background: "#F9FAF9",
       borderRadius: "8px",
-      border: "1px solid #E6E8E3"
+      border: "1px solid #E6E8E3",
     },
     flexRow: {
       display: "flex",
       gap: "16px",
       width: "100%",
-      flexWrap: isMobile ? "wrap" : "nowrap"
-    }
+      flexWrap: isMobile ? "wrap" : "nowrap",
+    },
   };
 
   return (
     <div style={styles.wrap}>
       <div style={styles.pageShell}>
         <nav style={{ marginBottom: "32px" }}>
-           <button
-             onClick={() => navigate("/simulator", { state: { module: "emission" } })}
-             style={{
-               background: "transparent",
-               border: "none",
-               color: "#6B7280",
-               fontSize: "14px",
-               fontWeight: 500,
-               cursor: "pointer",
-               display: "flex",
-               alignItems: "center",
-               gap: "8px",
-               padding: 0
-             }}
-           >
-             ← Back to Emission
-           </button>
+          <button
+            onClick={() =>
+              navigate("/simulator", { state: { module: "emission" } })
+            }
+            style={{
+              background: "transparent",
+              border: "none",
+              color: "#6B7280",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: "8px",
+              padding: 0,
+            }}
+          >
+            ← Back to Emission
+          </button>
         </nav>
         <header style={styles.header}>
           <div style={styles.brand}>GreOn IQ System</div>
@@ -526,51 +765,86 @@ const IoTDataSimulator = () => {
         <div style={styles.gridOuter}>
           <div className="mainControl">
             {/* Distribution Controls */}
-            <div style={{...styles.card, background: "#E7FBF2", border: "none"}}>
-                <div style={styles.sectionHeading}>◜ Parameter Allocation</div>
-                <div style={styles.grid}>
-                   <div>
-                      <label style={styles.label}>Quantity Pool</label>
-                      <input style={styles.input} type="number" value={totalValue} onChange={(e) => setTotalValue(parseFloat(e.target.value))} />
-                   </div>
-                   <div>
-                      <label style={styles.label}>Source Period</label>
-                      <select style={styles.select} value={sourcePeriod} onChange={(e) => setSourcePeriod(e.target.value)}>
-                        <option value="Yearly">Yearly Base</option>
-                        <option value="Half-yearly">H1/H2 Base</option>
-                        <option value="Quarterly">Qtr Base</option>
-                        <option value="Monthly">Monthly Base</option>
-                      </select>
-                   </div>
+            <div
+              style={{ ...styles.card, background: "#E7FBF2", border: "none" }}
+            >
+              <div style={styles.sectionHeading}>◜ Parameter Allocation</div>
+              <div style={styles.grid}>
+                <div>
+                  <label style={styles.label}>Quantity Pool</label>
+                  <input
+                    style={styles.input}
+                    type="number"
+                    value={totalValue}
+                    onChange={(e) => setTotalValue(parseFloat(e.target.value))}
+                  />
                 </div>
-                <div style={styles.grid}>
-                   <div>
-                      <label style={styles.label}>Target Granularity</label>
-                      <select style={styles.select} value={targetFrequency} onChange={(e) => setTargetFrequency(e.target.value)}>
-                        <option value="Monthly">Monthly Packets</option>
-                        <option value="Daily">Daily Packets</option>
-                        <option value="Hourly">Hourly Packets</option>
-                        <option value="Minutes">Minute Packets</option>
-                      </select>
-                   </div>
-                   {targetFrequency === "Minutes" && (
-                     <div>
-                        <label style={styles.label}>Minute Step</label>
-                        <input style={styles.input} type="number" value={minuteInterval} onChange={(e) => setMinuteInterval(e.target.value)} />
-                     </div>
-                   )}
+                <div>
+                  <label style={styles.label}>Source Period</label>
+                  <select
+                    style={styles.select}
+                    value={sourcePeriod}
+                    onChange={(e) => setSourcePeriod(e.target.value)}
+                  >
+                    <option value="Yearly">Yearly Base</option>
+                    <option value="Half-yearly">H1/H2 Base</option>
+                    <option value="Quarterly">Qtr Base</option>
+                    <option value="Monthly">Monthly Base</option>
+                  </select>
                 </div>
-                <div style={styles.summaryBox}>
-                   <div style={styles.summaryItem}>
-                      <span style={styles.summaryLabel}>VPD Protocol</span>
-                      <span style={styles.summaryValue}>{distributions.valuePerInterval.toFixed(4)}</span>
-                   </div>
-                   <div style={styles.summaryItem}>
-                      <span style={styles.summaryLabel}>Total Nodes</span>
-                      <span style={styles.summaryValue}>{sendsCompleted} / {distributions.totalIntervals}</span>
-                   </div>
+              </div>
+              <div style={styles.grid}>
+                <div>
+                  <label style={styles.label}>Target Granularity</label>
+                  <select
+                    style={styles.select}
+                    value={targetFrequency}
+                    onChange={(e) => setTargetFrequency(e.target.value)}
+                  >
+                    <option value="Monthly">Monthly Packets</option>
+                    <option value="Daily">Daily Packets</option>
+                    <option value="Hourly">Hourly Packets</option>
+                    <option value="Minutes">Minute Packets</option>
+                  </select>
                 </div>
-                {sendsCompleted > 0 && <button style={{...styles.btnBlack, width: "100%", marginTop: "16px"}} onClick={resetControlled}>Reset Cycle</button>}
+                {targetFrequency === "Minutes" && (
+                  <div>
+                    <label style={styles.label}>Minute Step</label>
+                    <input
+                      style={styles.input}
+                      type="number"
+                      value={minuteInterval}
+                      onChange={(e) => setMinuteInterval(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+              <div style={styles.summaryBox}>
+                <div style={styles.summaryItem}>
+                  <span style={styles.summaryLabel}>VPD Protocol</span>
+                  <span style={styles.summaryValue}>
+                    {distributions.valuePerInterval.toFixed(4)}
+                  </span>
+                </div>
+                <div style={styles.summaryItem}>
+                  <span style={styles.summaryLabel}>Total Nodes</span>
+                  <span style={styles.summaryValue}>
+                    {sendsCompleted} / {distributions.totalIntervals}
+                  </span>
+                </div>
+              </div>
+              {sendsCompleted > 0 && (
+                <button
+                  style={{
+                    ...styles.btnBlack,
+                    width: "100%",
+                    marginTop: "16px",
+                  }}
+                  onClick={resetControlled}
+                >
+                  Reset Cycle
+                </button>
+              )}
             </div>
 
             {/* Selection */}
@@ -579,7 +853,11 @@ const IoTDataSimulator = () => {
               <div style={styles.grid}>
                 <div>
                   <label style={styles.label}>Selected Scope</label>
-                  <select style={styles.select} value={selectedScope} onChange={(e) => setSelectedScope(e.target.value)}>
+                  <select
+                    style={styles.select}
+                    value={selectedScope}
+                    onChange={(e) => setSelectedScope(e.target.value)}
+                  >
                     <option value="Scope 1">Scope 1</option>
                     <option value="Scope 2">Scope 2</option>
                     <option value="Scope 3">Scope 3</option>
@@ -587,46 +865,103 @@ const IoTDataSimulator = () => {
                 </div>
                 <div>
                   <label style={styles.label}>Taxonomy Category</label>
-                  <select style={styles.select} value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+                  <select
+                    style={styles.select}
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
                     <option value="">Select Category</option>
-                    {getAvailableCategories().map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                    {getAvailableCategories().map((cat) => (
+                      <option key={cat} value={cat}>
+                        {cat}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
               <div style={styles.grid}>
-                 {hasActivityField() && (
+                {hasActivityField() && (
                   <div>
                     <label style={styles.label}>Sub-Activity</label>
-                    <select style={styles.select} value={selectedActivity} onChange={(e) => setSelectedActivity(e.target.value)}>
+                    <select
+                      style={styles.select}
+                      value={selectedActivity}
+                      onChange={(e) => setSelectedActivity(e.target.value)}
+                    >
                       <option value="">Select Activity</option>
-                      {getAvailableActivities().map(act => <option key={act} value={act}>{act}</option>)}
+                      {getAvailableActivities().map((act) => (
+                        <option key={act} value={act}>
+                          {act}
+                        </option>
+                      ))}
                     </select>
                   </div>
-                 )}
-                 <div>
-                    <label style={styles.label}>Tier Level</label>
-                    <select style={styles.select} value={selectedTier} onChange={(e) => setSelectedTier(e.target.value)}>
-                      {getAvailableTiers().map(t => <option key={t} value={t}>{t.toUpperCase()}</option>)}
-                    </select>
-                 </div>
+                )}
+                <div>
+                  <label style={styles.label}>Tier Level</label>
+                  <select
+                    style={styles.select}
+                    value={selectedTier}
+                    onChange={(e) => setSelectedTier(e.target.value)}
+                  >
+                    {getAvailableTiers().map((t) => (
+                      <option key={t} value={t}>
+                        {t.toUpperCase()}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </div>
               {getCurrentFields().length > 0 && (
-                <div style={{...styles.urlPreview, background: "#FFFFFF", color: "#34D399", fontWeight: 600}}>
-                  Active Schema: {getCurrentFields().join(' · ')}
+                <div
+                  style={{
+                    ...styles.urlPreview,
+                    background: "#FFFFFF",
+                    color: "#34D399",
+                    fontWeight: 600,
+                  }}
+                >
+                  Active Schema: {getCurrentFields().join(" · ")}
                 </div>
               )}
             </div>
 
             {/* Baseline Sync */}
             {requiresScope12Data() && (
-              <div style={{...styles.card, border: "2px solid #E6E8E3", background: "#F9FAF9"}}>
-                <div style={styles.sectionHeading}>⊷ Baseline Synchronisation</div>
+              <div
+                style={{
+                  ...styles.card,
+                  border: "2px solid #E6E8E3",
+                  background: "#F9FAF9",
+                }}
+              >
+                <div style={styles.sectionHeading}>
+                  ⊷ Baseline Synchronisation
+                </div>
                 <label style={styles.label}>Client Reference</label>
-                <input style={styles.input} value={clientId} onChange={(e) => setClientId(e.target.value)} />
-                <button style={styles.btnMint} onClick={fetchScope12Total} disabled={scope12Loading || !clientId}>
+                <input
+                  style={styles.input}
+                  value={clientId}
+                  onChange={(e) => setClientId(e.target.value)}
+                />
+                <button
+                  style={styles.btnMint}
+                  onClick={fetchScope12Total}
+                  disabled={scope12Loading || !clientId}
+                >
                   {scope12Loading ? "Synchronising..." : "Sync Baseline"}
                 </button>
-                {scope12Data && <div style={{marginTop: "12px", fontSize: "12px", color: "#10B981"}}>✓ Sync Confirmed: {scope12Data.scope12TotalCO2e} tCO₂e</div>}
+                {scope12Data && (
+                  <div
+                    style={{
+                      marginTop: "12px",
+                      fontSize: "12px",
+                      color: "#10B981",
+                    }}
+                  >
+                    ✓ Sync Confirmed: {scope12Data.scope12TotalCO2e} tCO₂e
+                  </div>
+                )}
               </div>
             )}
 
@@ -634,69 +969,166 @@ const IoTDataSimulator = () => {
             <div style={styles.card}>
               <div style={styles.sectionHeading}>⇥ Gateway Configuration</div>
               <label style={styles.label}>Root API Endpoint</label>
-              <input style={styles.input} value={baseUrl} onChange={(e) => setBaseUrl(e.target.value)} />
+              <input
+                style={styles.input}
+                value={baseUrl}
+                onChange={(e) => setBaseUrl(e.target.value)}
+              />
               <div style={styles.grid}>
                 <div>
-                   <label style={styles.label}>Client Reference</label>
-                   <input style={styles.input} value={clientId} onChange={(e) => setClientId(e.target.value)} />
+                  <label style={styles.label}>Client Reference</label>
+                  <input
+                    style={styles.input}
+                    value={clientId}
+                    onChange={(e) => setClientId(e.target.value)}
+                  />
                 </div>
                 <div>
-                   <label style={styles.label}>Node Serial</label>
-                   <input style={styles.input} value={nodeId} onChange={(e) => setNodeId(e.target.value)} />
+                  <label style={styles.label}>Node Serial</label>
+                  <input
+                    style={styles.input}
+                    value={nodeId}
+                    onChange={(e) => setNodeId(e.target.value)}
+                  />
                 </div>
               </div>
               <div style={styles.grid}>
                 <div>
-                   <label style={styles.label}>Scope Descriptor</label>
-                   <input style={styles.input} value={scopeId} onChange={(e) => setScopeId(e.target.value)} />
+                  <label style={styles.label}>Scope Descriptor</label>
+                  <input
+                    style={styles.input}
+                    value={scopeId}
+                    onChange={(e) => setScopeId(e.target.value)}
+                  />
                 </div>
                 <div>
-                   <label style={styles.label}>API Credential (DC_IOT Key)</label>
-                   <input style={styles.input} type="password" value={apiKey} onChange={(e) => setApiKey(e.target.value)} />
+                  <label style={styles.label}>
+                    API Credential (DC_IOT Key)
+                  </label>
+                  <input
+                    style={styles.input}
+                    type="password"
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                  />
                 </div>
               </div>
               <label style={styles.label}>Cycle Interval (MS)</label>
-              <input style={styles.input} type="number" value={intervalMs} onChange={(e) => setIntervalMs(e.target.value)} />
+              <input
+                style={styles.input}
+                type="number"
+                value={intervalMs}
+                onChange={(e) => setIntervalMs(e.target.value)}
+              />
               <div style={styles.urlPreview}>
-                <div style={{marginBottom: "6px", color: "#6B7280"}}>📡 Request Preview</div>
-                <div><span style={{color: "#34D399"}}>POST</span> {`${baseUrl}/clients/${clientId||"•"}/nodes/${nodeId||"•"}/scopes/${scopeId||"•"}/iot-data`}</div>
-                <div style={{marginTop: "8px", borderTop: "1px solid #E6E8E3", paddingTop: "8px"}}>
-                  <div style={{color: "#6B7280", marginBottom: "4px"}}>Headers sent with request:</div>
-                  <div><span style={{color: "#F59E0B"}}>Content-Type:</span> application/json</div>
-                  <div><span style={{color: "#F59E0B"}}>X-API-Key:</span> <span style={{color: apiKey ? "#34D399" : "#EF4444"}}>{apiKey ? `${apiKey.substring(0, 8)}${"•".repeat(12)} (key hidden for security)` : "⚠ Not entered yet"}</span></div>
+                <div style={{ marginBottom: "6px", color: "#6B7280" }}>
+                  📡 Request Preview
+                </div>
+                <div>
+                  <span style={{ color: "#34D399" }}>POST</span>{" "}
+                  {`${baseUrl}/clients/${clientId || "•"}/nodes/${nodeId || "•"}/scopes/${scopeId || "•"}/iot-data`}
+                </div>
+                <div
+                  style={{
+                    marginTop: "8px",
+                    borderTop: "1px solid #E6E8E3",
+                    paddingTop: "8px",
+                  }}
+                >
+                  <div style={{ color: "#6B7280", marginBottom: "4px" }}>
+                    Headers sent with request:
+                  </div>
+                  <div>
+                    <span style={{ color: "#F59E0B" }}>Content-Type:</span>{" "}
+                    application/json
+                  </div>
+                  <div>
+                    <span style={{ color: "#F59E0B" }}>X-API-Key:</span>{" "}
+                    <span style={{ color: apiKey ? "#34D399" : "#EF4444" }}>
+                      {apiKey
+                        ? `${apiKey.substring(0, 8)}${"•".repeat(12)} (key hidden for security)`
+                        : "⚠ Not entered yet"}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* Final Actions */}
-            <div style={{...styles.flexRow, gap: "20px", paddingBottom: "60px"}}>
-               <button style={{...styles.btnBlack, flex: 1}} onClick={sendOnce}>Send Single Vector</button>
-               <button 
-                  style={{...styles.btnMint, flex: 1.5, background: status === "RUNNING" ? "#0E1512" : "#34D399", color: status === "RUNNING" ? "#FFF" : "#0E1512"}} 
-                  onClick={status === "RUNNING" ? stopAuto : startAuto}
-               >
-                  {status === "RUNNING" ? "Shutdown Carrier" : "Execute Continuous Stream"}
-               </button>
-               <button style={{...styles.btnOutline, flex: 1}} onClick={clearLog}>Flush Board</button>
+            <div
+              style={{ ...styles.flexRow, gap: "20px", paddingBottom: "60px" }}
+            >
+              <button
+                style={{ ...styles.btnBlack, flex: 1 }}
+                onClick={sendOnce}
+              >
+                Send Single Vector
+              </button>
+              <button
+                style={{
+                  ...styles.btnMint,
+                  flex: 1.5,
+                  background: status === "RUNNING" ? "#0E1512" : "#34D399",
+                  color: status === "RUNNING" ? "#FFF" : "#0E1512",
+                }}
+                onClick={status === "RUNNING" ? stopAuto : startAuto}
+              >
+                {status === "RUNNING"
+                  ? "Shutdown Carrier"
+                  : "Execute Continuous Stream"}
+              </button>
+              <button
+                style={{ ...styles.btnOutline, flex: 1 }}
+                onClick={clearLog}
+              >
+                Flush Board
+              </button>
             </div>
           </div>
 
           {/* Console */}
           <div className="sidePanel" style={styles.sidePanelCol}>
-             <div style={styles.console}>
-                <div style={styles.consoleHeader}>Active Activity Log</div>
-                <div style={{ padding: "20px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", borderBottom: "1px solid #E6E8E3" }}>
-                   <div style={{ textAlign: "center" }}>
-                      <div style={styles.summaryLabel}>Success</div>
-                      <div style={{ fontSize: "20px", fontWeight: 700, color: "#10B981" }}>{totalSent > 0 ? Math.round((success/totalSent)*100) : 0}%</div>
-                   </div>
-                   <div style={{ textAlign: "center" }}>
-                      <div style={styles.summaryLabel}>Response</div>
-                      <div style={{ fontSize: "20px", fontWeight: 700, color: lastHttp === 200 ? "#10B981" : "#EF4444" }}>{lastHttp}</div>
-                   </div>
+            <div style={styles.console}>
+              <div style={styles.consoleHeader}>Active Activity Log</div>
+              <div
+                style={{
+                  padding: "20px",
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "12px",
+                  borderBottom: "1px solid #E6E8E3",
+                }}
+              >
+                <div style={{ textAlign: "center" }}>
+                  <div style={styles.summaryLabel}>Success</div>
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 700,
+                      color: "#10B981",
+                    }}
+                  >
+                    {totalSent > 0
+                      ? Math.round((success / totalSent) * 100)
+                      : 0}
+                    %
+                  </div>
                 </div>
-                <div style={styles.consoleLog} ref={logRef} />
-             </div>
+                <div style={{ textAlign: "center" }}>
+                  <div style={styles.summaryLabel}>Response</div>
+                  <div
+                    style={{
+                      fontSize: "20px",
+                      fontWeight: 700,
+                      color: lastHttp === 200 ? "#10B981" : "#EF4444",
+                    }}
+                  >
+                    {lastHttp}
+                  </div>
+                </div>
+              </div>
+              <div style={styles.consoleLog} ref={logRef} />
+            </div>
           </div>
         </div>
       </div>
