@@ -518,6 +518,7 @@ const IoTDataSimulator = () => {
     if (status === "RUNNING" && sendsCompleted >= distributions.totalIntervals) {
       log("🎉 Cycle completed", "ok");
       stopAuto();
+      resetControlled();
     }
   }, [sendsCompleted, distributions.totalIntervals, status]);
 

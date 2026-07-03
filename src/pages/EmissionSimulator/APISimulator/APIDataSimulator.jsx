@@ -489,6 +489,7 @@ const APIDataSimulator = () => {
     if (status === "RUNNING" && sendsCompleted >= distributions.totalIntervals) {
       log("🎉 Cycle complete", "ok");
       stopAuto();
+      resetControlled();
     }
   }, [sendsCompleted, distributions.totalIntervals, status]);
 
