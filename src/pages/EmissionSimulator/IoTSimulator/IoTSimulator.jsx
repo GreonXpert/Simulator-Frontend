@@ -41,6 +41,17 @@ const IoTDataSimulator = () => {
   const [selectedActivity, setSelectedActivity] = useState("");
   const [selectedTier, setSelectedTier] = useState("tier 1");
 
+  // Date selection — defaults to today; toggle on to pick a custom date
+  const getTodayString = () => {
+    const d = new Date();
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
+  };
+  const [selectedDate, setSelectedDate] = useState(getTodayString());
+  const [useCustomDate, setUseCustomDate] = useState(false);
+
   // ✅ Scope 1+2 API Integration state
   const [scope12Data, setScope12Data] = useState(null);
   const [scope12Loading, setScope12Loading] = useState(false);
@@ -391,6 +402,10 @@ const IoTDataSimulator = () => {
 
   const buildPayload = () => {
     const now = new Date();
+    if (useCustomDate && selectedDate) {
+      const [y, m, d] = selectedDate.split("-");
+      now.setFullYear(parseInt(y), parseInt(m) - 1, parseInt(d));
+    }
     return {
       dataValues: getCurrentFields().reduce((acc, field) => {
         const isLast = sendsCompleted === distributions.totalIntervals - 1;
@@ -494,6 +509,17 @@ const IoTDataSimulator = () => {
     log(`Broadcaster launched @ ${ms}ms`, "ok");
     timerRef.current = setInterval(sendOnce, ms);
   };
+
+  // Reliable auto-stop: sendOnce's own check reads a stale sendsCompleted
+  // (captured when setInterval started), so it never fires. This effect
+  // re-evaluates on every fresh render instead, so it always sees the
+  // current count and actually halts the stream at the target.
+  useEffect(() => {
+    if (status === "RUNNING" && sendsCompleted >= distributions.totalIntervals) {
+      log("🎉 Cycle completed", "ok");
+      stopAuto();
+    }
+  }, [sendsCompleted, distributions.totalIntervals, status]);
 
   const stopAuto = () => {
     if (!timerRef.current) return;
@@ -815,6 +841,48 @@ const IoTDataSimulator = () => {
                       type="number"
                       value={minuteInterval}
                       onChange={(e) => setMinuteInterval(e.target.value)}
+                    />
+                  </div>
+                )}
+              </div>
+              <div style={styles.grid}>
+                <div>
+                  <label
+                    style={{
+                      ...styles.label,
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "8px",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={useCustomDate}
+                      onChange={(e) => setUseCustomDate(e.target.checked)}
+                    />
+                    Use Custom Date
+                  </label>
+                  {!useCustomDate && (
+                    <div
+                      style={{
+                        ...styles.input,
+                        marginBottom: "20px",
+                        color: "#6B7280",
+                      }}
+                    >
+                      Today ({getTodayString()})
+                    </div>
+                  )}
+                </div>
+                {useCustomDate && (
+                  <div>
+                    <label style={styles.label}>Send Date</label>
+                    <input
+                      style={styles.input}
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
                     />
                   </div>
                 )}
