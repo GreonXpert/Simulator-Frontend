@@ -486,7 +486,10 @@ const APIDataSimulator = () => {
   // re-evaluates on every fresh render instead, so it always sees the
   // current count and actually halts the stream at the target.
   useEffect(() => {
-    if (status === "RUNNING" && sendsCompleted >= distributions.totalIntervals) {
+    if (
+      status === "RUNNING" &&
+      sendsCompleted >= distributions.totalIntervals
+    ) {
       log("🎉 Cycle complete", "ok");
       stopAuto();
       resetControlled();
