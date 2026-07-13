@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const IoTDataSimulator = () => {
@@ -424,7 +424,7 @@ const IoTDataSimulator = () => {
     };
   };
 
-  const log = (msg, type = "info") => {
+  const log = useCallback((msg, type = "info") => {
     if (!logRef.current) return;
     const t = new Date().toLocaleTimeString();
     const line = document.createElement("div");
@@ -442,7 +442,7 @@ const IoTDataSimulator = () => {
     logRef.current.prepend(line);
     while (logRef.current.childNodes.length > 500)
       logRef.current.removeChild(logRef.current.lastChild);
-  };
+  }, []);
 
   const sendOnce = async () => {
     if (!baseUrl || !clientId || !nodeId || !scopeId) {
@@ -510,6 +510,19 @@ const IoTDataSimulator = () => {
     timerRef.current = setInterval(sendOnce, ms);
   };
 
+  const stopAuto = useCallback(() => {
+    if (!timerRef.current) return;
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+    setStatus("STOPPED");
+    log("Broadcaster terminated", "warn");
+  }, [log]);
+
+  const resetControlled = useCallback(() => {
+    setSendsCompleted(0);
+    log("Cycle reset", "info");
+  }, [log]);
+
   // Reliable auto-stop: sendOnce's own check reads a stale sendsCompleted
   // (captured when setInterval started), so it never fires. This effect
   // re-evaluates on every fresh render instead, so it always sees the
@@ -523,20 +536,15 @@ const IoTDataSimulator = () => {
       stopAuto();
       resetControlled();
     }
-  }, [sendsCompleted, distributions.totalIntervals, status]);
+  }, [
+    sendsCompleted,
+    distributions.totalIntervals,
+    status,
+    stopAuto,
+    resetControlled,
+    log,
+  ]);
 
-  const stopAuto = () => {
-    if (!timerRef.current) return;
-    clearInterval(timerRef.current);
-    timerRef.current = null;
-    setStatus("STOPPED");
-    log("Broadcaster terminated", "warn");
-  };
-
-  const resetControlled = () => {
-    setSendsCompleted(0);
-    log("Cycle reset", "info");
-  };
   const clearLog = () => {
     if (logRef.current) logRef.current.innerHTML = "";
   };
