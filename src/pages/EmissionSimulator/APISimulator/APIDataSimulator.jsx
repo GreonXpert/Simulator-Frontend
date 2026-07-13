@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const APIDataSimulator = () => {
@@ -409,7 +409,7 @@ const APIDataSimulator = () => {
     };
   };
 
-  const log = (msg, type = "info") => {
+  const log = useCallback((msg, type = "info") => {
     if (!logRef.current) return;
     const t = new Date().toLocaleTimeString();
     const line = document.createElement("div");
@@ -425,7 +425,7 @@ const APIDataSimulator = () => {
             : "#0E1512";
     line.textContent = `[${t}] ${msg}`;
     logRef.current.prepend(line);
-  };
+  }, []);
 
   const sendOnce = async () => {
     if (!baseUrl || !clientId || !nodeId || !scopeId) {
@@ -481,6 +481,20 @@ const APIDataSimulator = () => {
     timerRef.current = setInterval(sendOnce, ms);
   };
 
+  const stopAuto = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+      setStatus("STOPPED");
+      log("Broadcaster halted", "warn");
+    }
+  }, [log]);
+
+  const resetControlled = useCallback(() => {
+    setSendsCompleted(0);
+    log("Progress reset", "info");
+  }, [log]);
+
   // Reliable auto-stop: sendOnce's own check reads a stale sendsCompleted
   // (captured when setInterval started), so it never fires. This effect
   // re-evaluates on every fresh render instead, so it always sees the
@@ -494,20 +508,15 @@ const APIDataSimulator = () => {
       stopAuto();
       resetControlled();
     }
-  }, [sendsCompleted, distributions.totalIntervals, status]);
+  }, [
+    sendsCompleted,
+    distributions.totalIntervals,
+    status,
+    stopAuto,
+    resetControlled,
+    log,
+  ]);
 
-  const stopAuto = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-      setStatus("STOPPED");
-      log("Broadcaster halted", "warn");
-    }
-  };
-  const resetControlled = () => {
-    setSendsCompleted(0);
-    log("Progress reset", "info");
-  };
   const clearLog = () => {
     if (logRef.current) logRef.current.innerHTML = "";
   };
