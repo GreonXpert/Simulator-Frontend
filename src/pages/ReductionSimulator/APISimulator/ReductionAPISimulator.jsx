@@ -46,13 +46,8 @@ const ReductionAPISimulator = () => {
   // ── M3: B/P/L entries ───────────────────────────────────────────────────────
   const [m3Entries, setM3Entries] = useState([{ itemId: "B1", varName: "", varValue: "" }]);
 
-  // ── Schema (auto-loaded from project) ────────────────────────────────────────
-  const [schemaLoading, setSchemaLoading] = useState(false);
-  const [schemaLoaded, setSchemaLoaded] = useState(false);
-  const [projectName, setProjectName] = useState("");
-  const [m2FormulaExpr, setM2FormulaExpr] = useState("");
-  // m3Schema: { baseline:[{id,label,manualVars:[{name}]}], project:[...], leakage:[...] }
-  const [m3Schema, setM3Schema] = useState(null);
+  // ── Template persistence ─────────────────────────────────────────────────────
+  const [templateSaved, setTemplateSaved] = useState(false);
 
   // ── Distribution computation (M1 distribution mode only) ────────────────────
   const distributions = React.useMemo(() => {
@@ -93,16 +88,40 @@ const ReductionAPISimulator = () => {
   useEffect(() => {
     setSendsCompleted(0);
     setApiKey("");
-    setSchemaLoaded(false);
-    setProjectName("");
-    setM3Schema(null);
+    setTemplateSaved(false);
+    setFormulaExpr("");
   }, [calculationMethodology]);
 
+  // ── Load saved template when project + methodology is selected ───────────────
   useEffect(() => {
-    setSchemaLoaded(false);
-    setProjectName("");
-    setM3Schema(null);
-  }, [projectId, clientId]);
+    if (!clientId || !projectId) return;
+    setTemplateSaved(false);
+    if (calculationMethodology === "methodology3") {
+      const saved = localStorage.getItem(`zc-m3-tpl-${clientId}-${projectId}`);
+      if (saved) {
+        try {
+          const rows = JSON.parse(saved);
+          if (Array.isArray(rows) && rows.length > 0) {
+            setM3Entries(rows.map(r => ({ itemId: r.itemId, varName: r.varName, varValue: "" })));
+            setTemplateSaved(true);
+          }
+        } catch {}
+      }
+    }
+    if (calculationMethodology === "methodology2") {
+      const saved = localStorage.getItem(`zc-m2-tpl-${clientId}-${projectId}`);
+      if (saved) {
+        try {
+          const tpl = JSON.parse(saved);
+          if (tpl.formulaExpr) setFormulaExpr(tpl.formulaExpr);
+          if (Array.isArray(tpl.vars) && tpl.vars.length > 0) {
+            setM2Vars(tpl.vars.map(k => ({ key: k, value: "" })));
+            setTemplateSaved(true);
+          }
+        } catch {}
+      }
+    }
+  }, [clientId, projectId, calculationMethodology]);
 
   // ── Parse formula expression into variable name rows ─────────────────────────
   const parseFormulaExpr = () => {
@@ -112,56 +131,6 @@ const ReductionAPISimulator = () => {
     const names = [...new Set(matches.filter(n => !mathKeywords.has(n)))];
     if (names.length === 0) return;
     setM2Vars(names.map(n => ({ key: n, value: "" })));
-  };
-
-  // ── Schema loader ─────────────────────────────────────────────────────────────
-  const loadSchema = async () => {
-    const L = liveRef.current;
-    if (!L.baseUrl || !L.clientId || !L.projectId || !L.calculationMethodology || !L.apiKey) {
-      log("Fill Server Address, Client ID, Project ID, Methodology and API Key before loading schema", "err");
-      return;
-    }
-    setSchemaLoading(true);
-    setSchemaLoaded(false);
-    log("Loading project schema...", "info");
-    try {
-      const url = `${L.baseUrl}/api/net-reduction/${L.clientId}/${L.projectId}/${L.calculationMethodology}/schema`;
-      const res = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json", "X-API-Key": L.apiKey } });
-      const data = await res.json();
-      if (!res.ok) { log(`Schema load failed: ${data.message || res.status}`, "err"); return; }
-
-      setProjectName(data.projectName || "");
-
-      if (data.mode === "m2") {
-        setM2FormulaExpr(data.formulaExpression || "");
-        setFormulaExpr(data.formulaExpression || "");
-        setM2Vars((data.variables || []).map(v => ({ key: v.name, value: "", role: v.role })));
-        log(`Schema loaded — Formula: ${data.formulaExpression}, Variables: ${data.variables.map(v=>v.name).join(", ")}`, "ok");
-      } else if (data.mode === "m3") {
-        setM3Schema(data.schema);
-        // Build flat entries from schema: one row per (item, variable)
-        const rows = [];
-        const sections = [
-          ...(data.schema.baseline || []),
-          ...(data.schema.project || []),
-          ...(data.schema.leakage || [])
-        ];
-        sections.forEach(item => {
-          (item.manualVars || []).forEach(v => {
-            rows.push({ itemId: item.id, varName: v.name, varValue: "", locked: true });
-          });
-        });
-        if (rows.length > 0) setM3Entries(rows);
-        log(`Schema loaded — Items: ${sections.map(s => s.id).join(", ")}`, "ok");
-      } else if (data.mode === "m1") {
-        log(`Schema loaded — M1: submit a single value field`, "ok");
-      }
-      setSchemaLoaded(true);
-    } catch (e) {
-      log(`Schema error: ${e.message}`, "err");
-    } finally {
-      setSchemaLoading(false);
-    }
   };
 
   // ── Payload builders ─────────────────────────────────────────────────────────
@@ -272,6 +241,22 @@ const ReductionAPISimulator = () => {
         setSuccess(prev => prev + 1);
         if (L.calculationMethodology === "methodology1" && L.m1Mode === "distribution") {
           setSendsCompleted(prev => prev + 1);
+        }
+        // Save project template so fields auto-load next time
+        if (L.calculationMethodology === "methodology3" && L.clientId && L.projectId) {
+          const tpl = L.m3Entries.filter(e => e.itemId.trim() && e.varName.trim())
+            .map(e => ({ itemId: e.itemId.trim(), varName: e.varName.trim() }));
+          if (tpl.length) {
+            localStorage.setItem(`zc-m3-tpl-${L.clientId}-${L.projectId}`, JSON.stringify(tpl));
+            setTemplateSaved(true);
+          }
+        }
+        if (L.calculationMethodology === "methodology2" && L.clientId && L.projectId) {
+          const varNames = L.m2Vars.filter(v => v.key.trim()).map(v => v.key.trim());
+          if (varNames.length) {
+            localStorage.setItem(`zc-m2-tpl-${L.clientId}-${L.projectId}`, JSON.stringify({ formulaExpr: formulaExpr, vars: varNames }));
+            setTemplateSaved(true);
+          }
         }
         if (res.status === 202) {
           log(`⚠ Anomaly flagged — entry held for consultant_admin approval (202)`, "warn");
@@ -426,22 +411,6 @@ const ReductionAPISimulator = () => {
                 </div>
               </div>
 
-              {/* Load Schema button */}
-              <div style={{ marginBottom: "24px" }}>
-                <button
-                  style={{ ...styles.btnMint, width: "100%", opacity: schemaLoading ? 0.6 : 1 }}
-                  onClick={loadSchema}
-                  disabled={schemaLoading || !clientId || !projectId || !apiKey}
-                >
-                  {schemaLoading ? "Loading Project Schema..." : schemaLoaded ? `✓ Schema Loaded — ${projectName}` : "Load Project Schema"}
-                </button>
-                {!schemaLoaded && (
-                  <div style={{ fontSize: "10px", color: "#6B7280", marginTop: "8px", fontFamily: "'Inter', sans-serif" }}>
-                    Fill Client ID, Project ID and API Key, then click to auto-populate the variable fields below.
-                  </div>
-                )}
-              </div>
-
               <label style={styles.label}>Cyclical Interval (MS)</label>
               <input style={styles.input} type="number" value={intervalMs} onChange={e => setIntervalMs(e.target.value)} />
 
@@ -575,6 +544,12 @@ const ReductionAPISimulator = () => {
               <div style={styles.card}>
                 <div style={styles.sectionHeading}>◞ Formula Variables</div>
 
+                {templateSaved && (
+                  <div style={{ fontSize: "12px", color: "#10B981", background: "#E7FBF2", borderRadius: "8px", padding: "10px 14px", marginBottom: "20px" }}>
+                    ✓ Variable fields loaded from saved project template
+                  </div>
+                )}
+
                 {/* Expression parser */}
                 <div style={{ background: "#F9FAF9", borderRadius: "12px", padding: "16px", marginBottom: "24px", border: "1px solid #E6E8E3" }}>
                   <label style={{ ...styles.label, marginBottom: "6px" }}>
@@ -638,77 +613,34 @@ const ReductionAPISimulator = () => {
               <div style={styles.card}>
                 <div style={styles.sectionHeading}>◞ B / P / L Entry Schema</div>
 
-                {!schemaLoaded ? (
-                  <p style={{ fontSize: "13px", color: "#F59E0B", marginBottom: "20px", marginTop: 0 }}>
-                    Click <strong>"Load Project Schema"</strong> above to auto-populate the correct B/P/L items and variables from the project configuration.
-                  </p>
-                ) : (
-                  <div style={{ fontSize: "12px", color: "#10B981", marginBottom: "20px", background: "#E7FBF2", borderRadius: "8px", padding: "10px 14px" }}>
-                    ✓ Variables loaded from project: <strong>{projectName}</strong>
+                {templateSaved ? (
+                  <div style={{ fontSize: "12px", color: "#10B981", background: "#E7FBF2", borderRadius: "8px", padding: "10px 14px", marginBottom: "20px" }}>
+                    ✓ Item fields loaded from saved project template — fill in values and send
                   </div>
+                ) : (
+                  <p style={{ fontSize: "13px", color: "#6B7280", marginBottom: "20px", marginTop: 0 }}>
+                    Enter each item ID (B1, P1, L1…) and variable name as configured in the project.
+                    After the first successful send, these fields will auto-load next time.
+                  </p>
                 )}
 
-                {/* Grouped by item when schema loaded */}
-                {schemaLoaded && m3Schema ? (
-                  <>
-                    {[
-                      { label: "Baseline (B)", items: m3Schema.baseline || [] },
-                      { label: "Project (P)", items: m3Schema.project || [] },
-                      { label: "Leakage (L)", items: m3Schema.leakage || [] }
-                    ].map(group => group.items.length > 0 && (
-                      <div key={group.label} style={{ marginBottom: "20px" }}>
-                        <div style={{ fontSize: "11px", fontWeight: 600, color: "#34D399", textTransform: "uppercase", marginBottom: "10px" }}>{group.label}</div>
-                        {group.items.map(item => (
-                          <div key={item.id} style={{ background: "#F9FAF9", borderRadius: "10px", padding: "12px 14px", marginBottom: "10px", border: "1px solid #E6E8E3" }}>
-                            <div style={{ fontSize: "12px", fontWeight: 600, color: "#0E1512", marginBottom: "8px" }}>
-                              {item.id} — {item.label}
-                            </div>
-                            {(item.manualVars || []).map(v => {
-                              const entryIdx = m3Entries.findIndex(r => r.itemId === item.id && r.varName === v.name);
-                              const val = entryIdx >= 0 ? m3Entries[entryIdx].varValue : "";
-                              return (
-                                <div key={v.name} style={{ display: "flex", gap: "8px", alignItems: "center", marginBottom: "6px" }}>
-                                  <div style={{ ...styles.inputSm, flex: 2, background: "#E7FBF2", color: "#10B981", fontWeight: 600, display: "flex", alignItems: "center", padding: "10px 12px", borderRadius: "10px", fontSize: "13px" }}>
-                                    {v.name}{v.unit ? ` (${v.unit})` : ""}
-                                  </div>
-                                  <input
-                                    style={{ ...styles.inputSm, flex: 1 }}
-                                    type="number"
-                                    placeholder="0"
-                                    value={val}
-                                    onChange={ev => {
-                                      if (entryIdx >= 0) updateM3Entry(entryIdx, "varValue", ev.target.value);
-                                    }}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        ))}
-                      </div>
-                    ))}
-                  </>
-                ) : (
-                  <>
-                    <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 100px 40px", gap: "8px", marginBottom: "8px" }}>
-                      <span style={{ ...styles.label, marginBottom: 0 }}>Item ID</span>
-                      <span style={{ ...styles.label, marginBottom: 0 }}>Variable Name</span>
-                      <span style={{ ...styles.label, marginBottom: 0 }}>Value</span>
-                      <span />
-                    </div>
-                    {m3Entries.map((e, i) => (
-                      <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 1fr 100px 40px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
-                        <input style={styles.inputSm} placeholder="B1 / P1 / L1" value={e.itemId} onChange={ev => updateM3Entry(i, "itemId", ev.target.value)} />
-                        <input style={styles.inputSm} placeholder="e.g. A" value={e.varName} onChange={ev => updateM3Entry(i, "varName", ev.target.value)} />
-                        <input style={styles.inputSm} type="number" placeholder="0" value={e.varValue} onChange={ev => updateM3Entry(i, "varValue", ev.target.value)} />
-                        {m3Entries.length > 1 && (
-                          <button style={{ ...styles.btnSmall, padding: "6px 8px" }} onClick={() => removeM3Entry(i)}>✕</button>
-                        )}
-                      </div>
-                    ))}
-                    <button style={styles.btnAdd} onClick={addM3Entry}>+ Add Row</button>
-                  </>
-                )}
+                <div style={{ display: "grid", gridTemplateColumns: "100px 1fr 100px 40px", gap: "8px", marginBottom: "8px" }}>
+                  <span style={{ ...styles.label, marginBottom: 0 }}>Item ID</span>
+                  <span style={{ ...styles.label, marginBottom: 0 }}>Variable Name</span>
+                  <span style={{ ...styles.label, marginBottom: 0 }}>Value</span>
+                  <span />
+                </div>
+                {m3Entries.map((e, i) => (
+                  <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 1fr 100px 40px", gap: "8px", marginBottom: "8px", alignItems: "center" }}>
+                    <input style={styles.inputSm} placeholder="B1 / P1 / L1" value={e.itemId} onChange={ev => updateM3Entry(i, "itemId", ev.target.value)} />
+                    <input style={styles.inputSm} placeholder="e.g. A" value={e.varName} onChange={ev => updateM3Entry(i, "varName", ev.target.value)} />
+                    <input style={styles.inputSm} type="number" placeholder="0" value={e.varValue} onChange={ev => updateM3Entry(i, "varValue", ev.target.value)} />
+                    {m3Entries.length > 1 && (
+                      <button style={{ ...styles.btnSmall, padding: "6px 8px" }} onClick={() => removeM3Entry(i)}>✕</button>
+                    )}
+                  </div>
+                ))}
+                <button style={styles.btnAdd} onClick={addM3Entry}>+ Add Row</button>
 
                 <div style={{ ...styles.urlPreview, marginTop: "16px", background: "#FFFFFF", color: "#34D399", fontWeight: 600, whiteSpace: "pre-wrap" }}>
                   {(() => {
